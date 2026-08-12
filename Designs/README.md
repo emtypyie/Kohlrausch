@@ -1,5 +1,9 @@
 # 3x3 Custom Mechanical Macro Pad — Pin Mapping Readme
 
+
+<img width="1600" height="1132" alt="image" src="https://github.com/user-attachments/assets/0b4d675d-2736-4f98-89ea-e661fab00eb1" />
+
+
 This document serves as the master hardware reference configuration for the 3x3 mechanical macro pad powered by the ESP32-C3 Super Mini microcontroller module.
 
 ## 🎛️ Pinout Reference Table
