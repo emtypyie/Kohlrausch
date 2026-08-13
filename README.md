@@ -1,6 +1,6 @@
 macrokeypad just for the PLOT!
 
-Pinlayout
+Pinlayout  
 GP0 -> COL 1  
 GP1 -> COL 2  
 GP2 -> COL 3  
