@@ -1,49 +1,31 @@
 from machine import Pin as p
 import time
-#columns:
-c1=p(7,p.IN)
-c2=p(15,p.IN)
-c3=p(16,p.IN)
-#rows:
-r1=p(4,p.OUT)
-r2=p(5,p.OUT)
-r3=p(6,p.OUT)
-#defining pins is done
-#=========================mapping:==========================
+
+# Define columns
+columns = [p(7, p.IN), p(15, p.IN), p(16, p.IN)]
+
+# Define rows
+rows = [p(4, p.OUT), p(5, p.OUT), p(6, p.OUT)]
+
+# Track current key state for debouncing
+key_state = [[False]*3 for _ in range(3)]
+
 while True:
-    #---------------------scanning row1----------------------
-    r1.value(0)
-    r2.value(1)
-    r3.value(1)
-    if c1.value()==0:
-        print("r1c1")
-    if c2.value()==0:
-        print("r1c2")
-    if c3.value()==0:
-        print("r1c3")
-    r1.value(1)
-    time.sleep(0.01)
-    #---------------------scanning row2----------------------
-    r1.value(1)
-    r2.value(0)
-    r3.value(1)
-    if c1.value()==0:
-        print("r2c1")
-    if c2.value()==0:
-        print("r2c2")
-    if c3.value()==0:
-        print("r2c3")
-    r2.value(1)
-    time.sleep(0.01)
-    #---------------------scanning row3----------------------
-    r1.value(1)
-    r2.value(1)
-    r3.value(0)
-    if c1.value()==0:
-        print("r3c1")
-    if c2.value()==0:
-        print("r3c2")
-    if c3.value()==0:
-        print("r3c3")
-    r3.value(1)
-    time.sleep(0.01)
+    pressed_keys = []
+    
+    # Scan all rows
+    for row_idx, row_pin in enumerate(rows):
+        row_pin.value(0)  # Activate row
+        time.sleep(0.001)  # Short delay for capacitance settling
+        
+        for col_idx, col_pin in enumerate(columns):
+            if col_pin.value() == 0:  # Key pressed
+                pressed_keys.append(f"r{row_idx+1}c{col_idx+1}")
+        
+        row_pin.value(1)  # Deactivate row
+    
+    # Print all pressed keys together (enables simultaneous detection)
+    if pressed_keys:
+        print(pressed_keys)
+    
+    time.sleep(0.01)  # Debounce delay
