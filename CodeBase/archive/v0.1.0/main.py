@@ -24,7 +24,7 @@ while True:
         
         row_pin.value(1)  # Deactivate row
     
-    # Print all pressed keys together (enables simultaneous detection)
+    # Multi Key Rollover 
     if pressed_keys:
         print(pressed_keys)
     
