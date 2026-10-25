@@ -1,0 +1,8 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "$id":"https://kohlrausch.local/keymap-profile-v1.schema.json",
+ "title":"Kohlrausch keymap profile v1",
+ "type":"object","additionalProperties":false,
+ "required":["schemaVersion","profileId","name","boardId","assignments"],
+ "properties":{"schemaVersion":{"const":1},"profileId":{"type":"string","minLength":1},"name":{"type":"string","minLength":1},"boardId":{"const":"kohlrausch-rp2040-macropad"},"assignments":{"type":"array","minItems":36,"maxItems":36,"items":{"type":"object","additionalProperties":false,"required":["keyId","layer","action"],"properties":{"keyId":{"enum":["key-3-1","key-2-1","key-1-1","key-3-2","key-2-2","key-1-2","key-3-3","key-2-3","key-1-3"]},"layer":{"type":"integer","minimum":1,"maximum":4},"action":{"oneOf":[{"type":"object","properties":{"kind":{"const":"none"}},"required":["kind"],"additionalProperties":false},{"type":"object","properties":{"kind":{"const":"keystroke"},"keys":{"type":"array","items":{"type":"string","minLength":1}}},"required":["kind","keys"],"additionalProperties":false},{"type":"object","properties":{"kind":{"const":"macro"},"macroId":{"type":"string","minLength":1}},"required":["kind","macroId"],"additionalProperties":false},{"type":"object","properties":{"kind":{"const":"website"},"url":{"type":"string","format":"uri"}},"required":["kind","url"],"additionalProperties":false},{"type":"object","properties":{"kind":{"const":"software"},"application":{"type":"string","minLength":1}},"required":["kind","application"],"additionalProperties":false},{"type":"object","properties":{"kind":{"const":"mouse"},"steps":{"type":"array","minItems":1}},"required":["kind","steps"],"additionalProperties":false}]}}}}}
+}

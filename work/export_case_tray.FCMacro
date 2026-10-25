@@ -1,0 +1,14 @@
+import FreeCAD as App, MeshPart, Mesh, Part
+p=r"C:\Users\workf\OneDrive\Documents\visrodeck_case_v6_color.FCStd"
+d=App.openDocument(p); d.recompute()
+tray=next(o for o in d.Objects if o.Name=="Case_Tray")
+feature=next(o for o in d.Objects if o.Name=="Feature")
+tray_mesh=MeshPart.meshFromShape(Shape=tray.Shape, LinearDeflection=0.22, AngularDeflection=0.22, Relative=False)
+tray_mesh.write(r"D:\EMTYPYIE\Kohlrausch\ui\assets\kohlrausch_case_tray_v6.stl")
+cap_indices=[6,9,12,15,18,21,24,27,33,30]
+cap_shape=Part.makeCompound([feature.Shape.Solids[i] for i in cap_indices])
+cap_mesh=MeshPart.meshFromShape(Shape=cap_shape, LinearDeflection=0.18, AngularDeflection=0.18, Relative=False)
+before=cap_mesh.CountFacets
+cap_mesh.decimate(0.2,0.9)
+cap_mesh.write(r"D:\EMTYPYIE\Kohlrausch\ui\assets\kohlrausch_keycaps_v6.stl")
+open(r"D:\EMTYPYIE\Kohlrausch\ui\assets\kohlrausch_case_v6.source.txt","w").write(f"Source: {p}\nCase: Case_Tray object, bounds {tray.Shape.BoundBox}\nKey caps: solids {cap_indices} from kohlrausch_visrodeck object (9 keys and dedicated LYR)\nTray facets: {tray_mesh.CountFacets}\nKey cap facets before decimation: {before}\nKey cap facets after decimation: {cap_mesh.CountFacets}\nMesh tolerances: tray 0.22 mm; caps 0.18 mm linear deflection and 0.2 mm decimation tolerance\n")

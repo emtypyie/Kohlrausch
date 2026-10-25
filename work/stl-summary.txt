@@ -1,0 +1,7 @@
+D:\DownLoad-D\visrodeck_case_base.stl facets 2448 bounds BoundBox (-42.25, -54.75, -8.35, 42.25, 54.75, 5.7)
+D:\DownLoad-D\visrodeck_case_lid.stl facets 1308 bounds BoundBox (-42.25, -54.75, 4.5, 42.25, 54.75, 8.35)
+D:\DownLoad-D\visrodeck_tray.stl facets 6604 bounds BoundBox (-35.25, -47.75, -8.35, 35.25, 47.75, 5)
+FreeCAD 1.1.1, Libs: 1.1.1R20260414 (Git shallow)
+(C) 2001-2026 FreeCAD contributors
+FreeCAD is free and open-source software licensed under the terms of LGPL2+ license.
+

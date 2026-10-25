@@ -1,0 +1,11 @@
+facets=205756
+addSegment
+countSegments
+decimate
+getPlanarSegments
+getSegment
+getSegmentsByCurvature
+getSegmentsOfType
+meshFromSegment
+refine
+smooth

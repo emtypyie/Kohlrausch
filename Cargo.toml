@@ -1,0 +1,24 @@
+[package]
+name = "kohlrausch"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Kohlrausch Konfig macropad configuration"
+
+[dependencies]
+clap = { version = "=4.6.7", features = ["derive"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.149"
+slint = "=1.18.1"
+serialport = { version = "=4.10.1", default-features = false }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_System_Console", "Win32_Storage_FileSystem", "Win32_System_IO"] }
+
+[build-dependencies]
+slint-build = "=1.18.1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kohlrausch.local/board-v1.schema.json",
+  "title": "Kohlrausch fixed board definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "boardId",
+    "hardwareRevision",
+    "mappingStatus",
+    "keys",
+    "layout",
+    "matrix",
+    "lyrSwitch",
+    "oled",
+    "usbPort"
+  ],
+  "properties": {
+    "boardId": {
+      "const": "kohlrausch-rp2040-macropad"
+    },
+    "hardwareRevision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mappingStatus": {
+      "enum": [
+        "provisional-unverified",
+        "schematic-verified"
+      ]
+    },
+    "keys": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "screenRow",
+          "screenColumn",
+          "matrixRow",
+          "matrixColumn",
+          "modelPositionMm"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^key-[1-3]-[1-3]$"
+          },
+          "label": {
+            "type": "string",
+            "pattern": "^[1-3]\\.[1-3]$"
+          },
+          "screenRow": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "screenColumn": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "matrixRow": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "matrixColumn": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "modelPositionMm": {
+            "required": [
+              "x",
+              "y"
+            ],
+            "type": "object",
+            "properties": {
+              "x": {
+                "maximum": 60,
+                "type": "number",
+                "minimum": -60
+              },
+              "y": {
+                "maximum": 60,
+                "type": "number",
+                "minimum": -60
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": {
+          "enum": [
+            "key-3-1",
+            "key-2-1",
+            "key-1-1",
+            "key-3-2",
+            "key-2-2",
+            "key-1-2",
+            "key-3-3",
+            "key-2-3",
+            "key-1-3"
+          ]
+        }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rowGpios",
+        "columnGpios",
+        "diodes",
+        "verified"
+      ],
+      "properties": {
+        "rowGpios": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "columnGpios": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "diodes": {
+          "enum": [
+            "unknown",
+            "rows-to-columns",
+            "columns-to-rows",
+            "none"
+          ]
+        },
+        "verified": {
+          "type": "boolean"
+        }
+      }
+    },
+    "lyrSwitch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "gpio",
+        "verified",
+        "modelPositionMm"
+      ],
+      "properties": {
+        "id": {
+          "const": "lyr-switch"
+        },
+        "gpio": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "modelPositionMm": {
+          "required": [
+            "x",
+            "y"
+          ],
+          "type": "object",
+          "properties": {
+            "x": {
+              "maximum": 60,
+              "type": "number",
+              "minimum": -60
+            },
+            "y": {
+              "maximum": 60,
+              "type": "number",
+              "minimum": -60
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "oled": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controller",
+        "resolution",
+        "i2cAddress",
+        "status"
+      ],
+      "properties": {
+        "controller": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolution": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "i2cAddress": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pending-verification",
+            "verified"
+          ]
+        }
+      }
+    },
+    "usbPort": {
+      "required": [
+        "id",
+        "modelPositionMm",
+        "status"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "const": "usb-port"
+        },
+        "modelPositionMm": {
+          "required": [
+            "x",
+            "y"
+          ],
+          "type": "object",
+          "properties": {
+            "x": {
+              "maximum": 60,
+              "type": "number",
+              "minimum": -60
+            },
+            "y": {
+              "maximum": 60,
+              "type": "number",
+              "minimum": -60
+            }
+          },
+          "additionalProperties": false
+        },
+        "status": {
+          "const": "position-from-case-model"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,10 @@
+import FreeCAD as App
+import Mesh
+
+for path in [
+    r"D:\DownLoad-D\visrodeck_case_base.stl",
+    r"D:\DownLoad-D\visrodeck_case_lid.stl",
+    r"D:\DownLoad-D\visrodeck_tray.stl",
+]:
+    mesh = Mesh.Mesh(path)
+    print(path, "facets", len(mesh.Facets), "bounds", mesh.BoundBox)

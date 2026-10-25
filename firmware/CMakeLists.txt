@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.20)
+if(NOT DEFINED ENV{PICO_SDK_PATH})
+  message(FATAL_ERROR "Set PICO_SDK_PATH to a verified Raspberry Pi Pico SDK checkout before configuring firmware. This milestone has no GPIO/OLED implementation.")
+endif()
+include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+project(kohlrausch_firmware C CXX ASM)
+pico_sdk_init()
+add_executable(kohlrausch_firmware src/main.cpp src/layer_logic.cpp)
+target_include_directories(kohlrausch_firmware PRIVATE include src)
+target_link_libraries(kohlrausch_firmware pico_stdlib)
+pico_add_extra_outputs(kohlrausch_firmware)
+

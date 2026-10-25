@@ -1,0 +1,6 @@
+import FreeCAD as App, MeshPart, Mesh
+p=r"C:\Users\workf\OneDrive\Documents\Kohlrausch_Tray_Fit_Check.FCStd"; d=App.openDocument(p); d.recompute(); o=[x for x in d.Objects if hasattr(x,'Shape') and not x.Shape.isNull()][0]
+m=MeshPart.meshFromShape(Shape=o.Shape, LinearDeflection=0.5, AngularDeflection=0.4, Relative=False)
+before=m.CountFacets; m.decimate(0.2,0.85)
+m.write(r"D:\EMTYPYIE\Kohlrausch\ui\assets\kohlrausch_assembly_revA.stl")
+open(r"D:\EMTYPYIE\Kohlrausch\ui\assets\kohlrausch_assembly_revA.source.txt","w").write(f"Source: {p}\nRevision: Kohlrausch_Tray_Fit_Check.FCStd (2026-10-24)\nSolids: {len(o.Shape.Solids)}\nB-rep faces: {len(o.Shape.Faces)}\nTessellated facets before decimation: {before}\nFacets after decimation: {m.CountFacets}\nLinear deflection: 0.5 mm; decimation tolerance: 0.2 mm\n")

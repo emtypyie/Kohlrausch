@@ -1,0 +1,24 @@
+import FreeCAD as App
+import Part
+
+step_path = r"C:\Users\workf\OneDrive\Documents\A_kohlrausch__visrodeck_final.step"
+step_doc = App.newDocument("LatestStepInspect")
+Part.insert(step_path, step_doc.Name)
+step_doc.recompute()
+print("STEP_OBJECTS", len(step_doc.Objects))
+for obj in step_doc.Objects:
+    if not hasattr(obj, "Shape") or obj.Shape.isNull():
+        continue
+    box = obj.Shape.BoundBox
+    print("STEP", obj.Name, obj.Label, "solids", len(obj.Shape.Solids), "faces", len(obj.Shape.Faces),
+          "bounds", *(round(v, 2) for v in (box.XMin, box.YMin, box.ZMin, box.XMax, box.YMax, box.ZMax)))
+
+fcstd_path = r"C:\Users\workf\OneDrive\Documents\Kohlrausch_Tray_Fit_Check.FCStd"
+fcstd = App.openDocument(fcstd_path)
+fcstd.recompute()
+print("FCSTD", fcstd.Name, "OBJECTS", len(fcstd.Objects))
+for obj in fcstd.Objects:
+    if hasattr(obj, "Shape") and not obj.Shape.isNull():
+        box = obj.Shape.BoundBox
+        print("FC", obj.Name, obj.Label, "type", obj.TypeId, "solids", len(obj.Shape.Solids), "faces", len(obj.Shape.Faces),
+              "bounds", *(round(v, 2) for v in (box.XMin, box.YMin, box.ZMin, box.XMax, box.YMax, box.ZMax)))

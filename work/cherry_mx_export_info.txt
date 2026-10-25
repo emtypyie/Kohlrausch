@@ -1,0 +1,5 @@
+parts=6
+components=['Mid Bottom_Mid Bottom_0', 'Mid LED_LED_0', 'Mid LED_Metal_0', 'Mid Spring_Metal_0', 'Mid Switch_Blue Plastic_0', 'Mid Top_Mid Top_0']
+source_faces=7711
+export_triangles=2159
+bounds_mm=[-7.80000087618828, -7.800000719726086, -9.300006553530693]..[7.799998700618742, 7.800000719726086, 9.604542516171932]

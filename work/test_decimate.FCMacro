@@ -1,0 +1,7 @@
+import FreeCAD as App, MeshPart, Mesh
+p=r"C:\Users\workf\OneDrive\Documents\Kohlrausch_Tray_Fit_Check.FCStd"; d=App.openDocument(p); o=[x for x in d.Objects if hasattr(x,'Shape') and not x.Shape.isNull()][0]
+m=MeshPart.meshFromShape(Shape=o.Shape, LinearDeflection=0.5, AngularDeflection=0.4, Relative=False)
+f=open(r"D:\EMTYPYIE\Kohlrausch\work\decimate-bench.txt","w"); f.write("before="+str(m.CountFacets)+"\n")
+for tol,red in [(0.1,0.8),(0.2,0.85),(0.35,0.9)]:
+ c=Mesh.Mesh(m); c.decimate(tol,red); f.write(f"tol={tol}, reduction={red}, facets={c.CountFacets}\n")
+f.close()

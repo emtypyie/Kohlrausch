@@ -1,0 +1,4 @@
+export type DeviceStatus={transport:"mock"|"usb";connected:boolean;simulated:boolean;firmwareVersion?:string;activeLayer:1|2|3|4;message:string};
+export interface DeviceTransport{discover():Promise<boolean>;getStatus():Promise<DeviceStatus>;readKeymap():Promise<unknown>;writeKeymap(config:unknown):Promise<void>;readActiveLayer():Promise<1|2|3|4>;requestFirmwareUpdate(image:Uint8Array):Promise<{accepted:boolean;reason:string}>}
+export function isDeviceStatus(v:unknown):v is DeviceStatus{if(!v||typeof v!=="object")return false;const x=v as DeviceStatus;return (x.transport==="mock"||x.transport==="usb")&&typeof x.connected==="boolean"&&typeof x.simulated==="boolean"&&[1,2,3,4].includes(x.activeLayer)&&typeof x.message==="string"&&(x.transport==="mock"?(x.simulated===true&&x.connected===false):x.simulated===false)}
+

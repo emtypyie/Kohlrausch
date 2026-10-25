@@ -1,0 +1,548 @@
+import { ComboBox, LineEdit, TextEdit } from "std-widgets.slint";
+component AppText inherits Text {
+    font-family: "Segoe UI";
+}
+
+component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: false;
+    callback chosen();
+    height: 38px;
+    background: root.active ? #2a1711 : touch.has-hover ? #1b1919 : #111111;
+    Rectangle { x: 0px; y: 6px; width: 2px; height: parent.height - 12px; background: root.active ? #ff592e : #111111; }
+    AppText { x: 15px; vertical-alignment: center; text: root.label; color: root.active ? #fff0ea : #b3b0b1; font-size: 15px; }
+    touch := TouchArea { clicked => { root.chosen(); } }
+}
+
+component ActionButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> enabled: true;
+    in property <bool> active: false;
+    callback pressed();
+    height: 34px;
+    background: !root.enabled ? #171717 : root.active ? #432016 : touch.has-hover ? #30211c : #1b1b1b;
+    border-width: 1px;
+    border-color: !root.enabled ? #302c2b : root.active ? #ff7048 : touch.has-hover ? #8f5540 : #484342;
+    border-radius: 3px;
+    AppText { x: 12px; vertical-alignment: center; text: root.label; color: root.enabled ? #f0e9e6 : #807b79; font-size: 14px; }
+    touch := TouchArea { enabled: root.enabled; clicked => { root.pressed(); } }
+}
+
+component SceneCallout inherits Rectangle {
+    in property <string> title;
+    in property <string> detail;
+    in property <float> reveal: 0;
+    width: 128px;
+    height: 38px;
+    background: #100d17ed;
+    border-width: 1px;
+    border-color: #9f55d3;
+    border-radius: 2px;
+    drop-shadow-blur: 7px;
+    drop-shadow-color: #8d3ce066;
+    opacity: root.reveal;
+    animate opacity { duration: 180ms; }
+    Rectangle { x: 0px; width: 3px; height: parent.height; background: #bd72f2; }
+    Rectangle { x: 7px; y: 0px; width: 18px; height: 1px; background: #6de9ff; }
+    AppText { x: 10px; y: 4px; width: parent.width - 14px; height: 16px; text: root.title; color: #f0ddff; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+    AppText { x: 10px; y: 20px; width: parent.width - 14px; height: 12px; text: root.detail; color: #a991bd; font-size: 8px; vertical-alignment: center; }
+}
+
+component WindowButton inherits Rectangle {
+    in property <string> glyph;
+    in property <bool> close-button: false;
+    callback pressed();
+    width: 38px;
+    height: 34px;
+    background: touch.has-hover ? (root.close-button ? #bd3b32 : #343132) : transparent;
+    AppText {
+        text: root.glyph;
+        color: #eee9e7;
+        font-family: "Segoe UI Symbol";
+        font-size: 19px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    touch := TouchArea { mouse-cursor: pointer; clicked => { root.pressed(); } }
+}
+
+export component MainWindow inherits Window {
+    title: "Kohlrausch Konfig";
+    no-frame: true;
+    resize-border-width: 6px;
+    min-width: 1140px;
+    min-height: 620px;
+    preferred-width: 1140px;
+    preferred-height: 680px;
+    background: #080808;
+
+    in-out property <string> active-section: "Keymaps";
+    in-out property <int> active-layer: 1;
+    in-out property <string> selected-key: "logical-1-1";
+    in-out property <string> selected-key-label: "1.1";
+    in-out property <string> physical-reference: "3.1";
+    in-out property <string> physical-key-id: "key-3-1";
+    in-out property <string> inspector-title: "1.1  /  LAYER 1";
+    in-out property <string> assignment-text: "Unassigned";
+    in-out property <string> profile-name: "Default";
+    in-out property <string> status-message: "Profile ready";
+    in-out property <string> action-value: "";
+    in-out property <string> action-extra: "";
+    in-out property <string> action-arguments: "[]";
+    in-out property <string> editor-kind: "keystroke";
+    in-out property <string> editor-error: "";
+    in-out property <bool> editor-dirty: false;
+    in-out property <bool> capturing-shortcut: false;
+    in-out property <[string]> macro-options: [];
+    in-out property <int> macro-index: -1;
+    in-out property <string> macro-detail: "No saved macros";
+    in-out property <string> raw-config: "";
+    in-out property <string> profile-name-edit: "";
+    in-out property <string> new-profile-name: "";
+    in-out property <image> scene-image;
+    in-out property <int> startup-sequence: 0;
+    in-out property <bool> hover-visible: false;
+    in-out property <string> hover-label: "";
+    in-out property <string> hover-hardware: "";
+    in-out property <string> hover-matrix: "";
+    in-out property <string> hover-gpio: "";
+    in-out property <string> hover-action: "";
+    in-out property <int> hover-layer: 1;
+    in-out property <float> hover-anchor-x: 360;
+    in-out property <float> hover-anchor-y: 270;
+    in-out property <bool> selection-visible: false;
+    in-out property <float> selection-anchor-x: 360;
+    in-out property <float> selection-anchor-y: 270;
+    in-out property <[string]> board-options: ["Kohlrausch RP2040 · Rev A (provisional)"];
+    in-out property <int> board-index: 0;
+    in-out property <string> board-name: "Kohlrausch RP2040 · Rev A (provisional)";
+    in-out property <[string]> port-options: [];
+    in-out property <bool> ports-available: false;
+    in-out property <int> port-index: 0;
+    in-out property <string> selected-port: "";
+    in-out property <string> port-status: "No device connection";
+    in-out property <string> macro-mode: "Website";
+    in-out property <string> macro-name: "";
+    in-out property <string> macro-value: "";
+    in-out property <string> macro-delay: "0";
+    in-out property <string> macro-preview: "No actions saved";
+    callback navigate(string);
+    callback select-key(string);
+    callback select-layer(int);
+    callback cycle-lyr();
+    callback save-action(string, string, string, string);
+    callback cancel-action();
+    callback capture-key(string);
+    callback test-action();
+    callback open-macro-editor();
+    callback rename-profile(string);
+    callback create-profile(string);
+    callback save-raw-config(string);
+    callback pick-key(float, float) -> string;
+    callback hover-at(float, float);
+    callback board-selected(string);
+    callback port-selected(string);
+    callback refresh-ports();
+    callback save-macro(string, string, string);
+    callback add-macro-step(string, string, string);
+    callback flash-request();
+
+    Rectangle {
+        background: #080808;
+        VerticalLayout {
+            spacing: 0px;
+            WindowMoveArea {
+                height: 58px;
+                Rectangle {
+                    width: parent.width;
+                    height: parent.height;
+                    background: #171717;
+                    HorizontalLayout {
+                        cross-axis-alignment: center;
+                        padding-left: 20px; padding-right: 8px; spacing: 11px;
+                        Rectangle {
+                            width: 32px; height: 36px; background: transparent;
+                            cross-axis-self-alignment: center;
+                            Image { source: @image-url("assets/visrodeck_instruments.png"); x: 1px; y: 3px; width: 30px; height: 30px; image-fit: contain; }
+                        }
+                        AppText { text: "KOHLRAUSCH KONFIG"; color: #f3efed; font-size: 16px; font-weight: 700; vertical-alignment: center; }
+                        AppText { text: "3×3 MACROPAD"; color: #99918e; font-size: 12px; vertical-alignment: center; }
+                        Rectangle { horizontal-stretch: 1; }
+                        AppText { text: "●"; color: #ff7048; font-size: 14px; vertical-alignment: center; }
+                        AppText { text: "OFFLINE"; color: #d1cac7; vertical-alignment: center; font-size: 13px; }
+                        Rectangle { width: 8px; }
+                        WindowButton { glyph: "—"; pressed => { root.minimized = true; } }
+                        WindowButton { glyph: root.maximized ? "❐" : "□"; pressed => { root.maximized = !root.maximized; } }
+                        WindowButton { glyph: "×"; close-button: true; pressed => { root.close(); } }
+                    }
+                }
+            }
+            HorizontalLayout {
+                vertical-stretch: 1;
+                min-height: 0px;
+                spacing: 0px;
+                Rectangle {
+                    width: 194px; background: #111111;
+                    VerticalLayout {
+                        padding-left: 14px; padding-right: 14px; padding-top: 19px; spacing: 4px;
+                        AppText { text: "WORKSPACE"; color: #827d7b; font-size: 12px; }
+                        nav-keymaps := NavItem { label: "Keymaps"; active: root.active-section == "Keymaps"; chosen => { root.navigate("Keymaps"); } }
+                        nav-layers := NavItem { label: "Layers"; active: root.active-section == "Layers"; chosen => { root.navigate("Layers"); } }
+                        nav-macros := NavItem { label: "Macros"; active: root.active-section == "Macros"; chosen => { root.navigate("Macros"); } }
+                        nav-profiles := NavItem { label: "Profiles"; active: root.active-section == "Profiles"; chosen => { root.navigate("Profiles"); } }
+                        nav-device := NavItem { label: "Device settings"; active: root.active-section == "Device settings"; chosen => { root.navigate("Device settings"); } }
+                        nav-config := NavItem { label: "Config Studio"; active: root.active-section == "Config Studio"; chosen => { root.navigate("Config Studio"); } }
+                        nav-about := NavItem { label: "About & license"; active: root.active-section == "About & license"; chosen => { root.navigate("About & license"); } }
+                        Rectangle { vertical-stretch: 1; }
+                        Rectangle { height: 1px; background: #332f2d; }
+                        AppText { text: "ACTIVE PROFILE"; color: #817a78; font-size: 11px; }
+                        AppText { text: root.profile-name; color: #d6cfcc; font-size: 14px; }
+                        Rectangle { height: 8px; }
+                    }
+                }
+                Rectangle {
+                    background: #090909;
+                    VerticalLayout {
+                        padding-left: 27px; padding-right: 25px; padding-top: 20px; padding-bottom: 16px; spacing: 14px;
+                        AppText { text: "WORKSPACE  /  \{root.active-section}   ·   \{root.profile-name}"; color: #8b8582; font-size: 12px; }
+
+                        if root.active-section == "Keymaps": HorizontalLayout {
+                            spacing: 22px; vertical-stretch: 1; cross-axis-alignment: stretch;
+                            VerticalLayout {
+                                horizontal-stretch: 1; vertical-stretch: 1; spacing: 10px;
+                                HorizontalLayout {
+                                    AppText { text: "Keymap editor"; color: #f0ecea; font-size: 24px; font-weight: 600; }
+                                    Rectangle { horizontal-stretch: 1; }
+                                    AppText { text: "LAYER  \{root.active-layer}"; color: #ff875f; font-size: 13px; vertical-alignment: center; }
+                                }
+                                AppText { text: "Select a switch to edit its action."; color: #9b9592; font-size: 13px; }
+                                Rectangle {
+                                    horizontal-stretch: 1; vertical-stretch: 1;
+                                    min-height: 300px;
+                                    background: #0b0a0d; border-width: 1px; border-color: #353230; border-radius: 4px;
+                                    transform-rotation: root.startup-sequence < 3 ? -1.2deg : 0deg;
+                                    animate transform-rotation { duration: 300ms; }
+                                    Image {
+                                        source: root.scene-image;
+                                        width: parent.width; height: parent.height; image-fit: fill;
+                                    }
+                                    scene-touch := TouchArea {
+                                        width: parent.width; height: parent.height; mouse-cursor: pointer;
+                                        changed mouse-x => {
+                                            if scene-touch.has-hover && !scene-touch.pressed { root.hover-at(scene-touch.mouse-x / scene-touch.width * 840, scene-touch.mouse-y / scene-touch.height * 540); }
+                                        }
+                                        changed mouse-y => {
+                                            if scene-touch.has-hover && !scene-touch.pressed { root.hover-at(scene-touch.mouse-x / scene-touch.width * 840, scene-touch.mouse-y / scene-touch.height * 540); }
+                                        }
+                                        clicked => {
+                                            let id = root.pick-key(scene-touch.mouse-x / scene-touch.width * 840, scene-touch.mouse-y / scene-touch.height * 540);
+                                            if id != "" { root.select-key(id); }
+                                        }
+                                        changed has-hover => { if !scene-touch.has-hover { root.hover-at(-1, -1); } }
+                                    }
+                                    if root.startup-sequence > 0 && root.startup-sequence < 4: Rectangle {
+                                        x: parent.width * (0.26 + Math.mod(root.startup-sequence, 3) * 0.12);
+                                        y: parent.height * 0.12;
+                                        width: parent.width * 0.24;
+                                        height: 2px;
+                                        background: #8aeaff;
+                                        opacity: 0.7;
+                                    }
+                                    if root.startup-sequence >= 7: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 309 187 L 270 140 L 198 140";
+                                        stroke: #bd72f255; stroke-width: 5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 6) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 7: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 309 187 L 270 140 L 198 140";
+                                        stroke: #d69cff; stroke-width: 1.5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 6) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 7: SceneCallout {
+                                        x: 68px; y: parent.height * 0.2593 - self.height / 2;
+                                        title: "LYR SWITCH"; detail: "DEDICATED INPUT";
+                                        reveal: clamp((root.startup-sequence - 6) / 2, 0, 1);
+                                    }
+                                    if root.startup-sequence >= 8: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 408 116 L 442 66 L 515 66";
+                                        stroke: #bd72f255; stroke-width: 5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 7) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 8: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 408 116 L 442 66 L 515 66";
+                                        stroke: #d69cff; stroke-width: 1.5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 7) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 8: SceneCallout {
+                                        x: parent.width * 0.632; y: parent.height * 0.1222 - self.height / 2;
+                                        title: "RP2040"; detail: "DEVICE PORT";
+                                        reveal: clamp((root.startup-sequence - 7) / 2, 0, 1);
+                                    }
+                                    if root.startup-sequence >= 9: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 512 205 L 560 150 L 650 150";
+                                        stroke: #bd72f255; stroke-width: 5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 8) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 9: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 512 205 L 560 150 L 650 150";
+                                        stroke: #d69cff; stroke-width: 1.5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 8) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 9: SceneCallout {
+                                        x: parent.width - self.width - 8px; y: parent.height * 0.2778 - self.height / 2;
+                                        title: "KEY ARRAY"; detail: "9 PROGRAMMABLE";
+                                        reveal: clamp((root.startup-sequence - 8) / 2, 0, 1);
+                                    }
+                                    if root.selection-visible: Rectangle {
+                                        x: clamp(root.selection-anchor-x / 840 * parent.width - 23px, 3px, parent.width - 49px);
+                                        y: clamp(root.selection-anchor-y / 540 * parent.height - 23px, 3px, parent.height - 49px);
+                                        width: 46px; height: 46px;
+                                        border-width: 2px; border-color: #ff7048; border-radius: 8px;
+                                        background: transparent;
+                                    }
+                                    if root.hover-visible: Rectangle {
+                                        x: clamp(root.hover-anchor-x / 840 * parent.width + (root.hover-anchor-x < 420 ? 82px : -self.width - 82px), 8px, parent.width - self.width - 8px);
+                                        y: clamp(root.hover-anchor-y / 540 * parent.height + (root.hover-anchor-y < 175 ? 20px : -self.height - 14px), 8px, parent.height - self.height - 8px);
+                                        width: 240px; height: 132px; background: #191817ed;
+                                        border-width: 1px; border-color: #9c513a; border-radius: 3px;
+                                        VerticalLayout {
+                                            padding: 10px; spacing: 4px;
+                                            AppText { text: "KEY  \{root.hover-label}   ·   LAYER \{root.hover-layer}"; color: #fff0ea; font-size: 13px; font-weight: 700; }
+                                            AppText { text: "Physical  \{root.hover-hardware}"; color: #d2cbc8; font-size: 11px; overflow: elide; }
+                                            AppText { text: "Matrix  \{root.hover-matrix}"; color: #aaa3a0; font-size: 11px; overflow: elide; }
+                                            AppText { text: "GPIO  \{root.hover-gpio}"; color: #aaa3a0; font-size: 11px; overflow: elide; }
+                                            AppText { text: "Action  \{root.hover-action}"; color: #ffc0a8; font-size: 11px; overflow: elide; }
+                                        }
+                                    }
+                                    Rectangle { x: 12px; y: parent.height - 28px; width: 165px; height: 18px; background: #101010cc; border-radius: 2px;
+                                        AppText { x: 7px; vertical-alignment: center; text: "CASE V6 · KEY SELECT"; color: #c2b8b4; font-size: 10px; }
+                                    }
+                                }
+                                HorizontalLayout { spacing: 7px;
+                                    for number in [1, 2, 3, 4]: ActionButton {
+                                        width: 88px; active: root.active-layer == number;
+                                        label: "LAYER \{number}";
+                                        pressed => { root.select-layer(number); }
+                                    }
+                                    Rectangle { horizontal-stretch: 1; }
+                                    AppText { text: "Startup layer 1"; color: #928a87; font-size: 12px; vertical-alignment: center; }
+                                }
+                            }
+                            Rectangle {
+                                width: 288px; background: #101010; border-width: 1px; border-color: #353230; border-radius: 3px;
+                                VerticalLayout {
+                                    padding: 10px; spacing: 5px;
+                                    AppText { text: "ACTION INSPECTOR"; color: #948b88; font-size: 11px; }
+                                    AppText { text: root.inspector-title; color: #f5efec; font-size: 22px; font-weight: 600; }
+                                    Rectangle { height: 1px; background: #393432; }
+                                    AppText { text: "LOGICAL KEY ID"; color: #918885; font-size: 9px; }
+                                    AppText { text: root.selected-key; color: #d2cbc8; font-size: 10px; }
+                                    AppText { text: "PHYSICAL SWITCH  ·  MATRIX/GPIO UNVERIFIED"; color: #918885; font-size: 9px; }
+                                    AppText { text: "\{root.physical-reference}  ·  \{root.physical-key-id}"; color: #d2cbc8; font-size: 11px; }
+                                    Rectangle { height: 1px; background: #393432; }
+                                    AppText { text: "CURRENT ASSIGNMENT"; color: #918885; font-size: 10px; }
+                                    AppText { text: root.assignment-text; color: #e5ddda; font-size: 13px; wrap: word-wrap; }
+                                    AppText { text: "ASSIGN ACTION"; color: #918885; font-size: 10px; }
+                                    HorizontalLayout { spacing: 3px;
+                                        ActionButton { label: "Keys"; width: 49px; active: root.editor-kind == "keyChord"; pressed => { root.editor-kind = "keyChord"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                        ActionButton { label: "Macro"; width: 51px; active: root.editor-kind == "macro"; pressed => { root.editor-kind = "macro"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.macro-index = -1; root.editor-dirty = true; root.editor-error = ""; } }
+                                        ActionButton { label: "Web"; width: 48px; active: root.editor-kind == "website"; pressed => { root.editor-kind = "website"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                        ActionButton { label: "App"; width: 44px; active: root.editor-kind == "application"; pressed => { root.editor-kind = "application"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                        ActionButton { label: "Clicks"; width: 48px; active: root.editor-kind == "mouseAction"; pressed => { root.editor-kind = "mouseAction"; root.action-value = "Left click"; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                    }
+                                    if root.editor-kind == "keyChord": VerticalLayout {
+                                        height: 96px; vertical-stretch: 0; spacing: 4px;
+                                        Rectangle { height: 25px; background: #17131c; border-width: 1px; border-color: #3b3047; border-radius: 3px;
+                                            AppText { x: 8px; width: parent.width - 16px; vertical-alignment: center; text: root.action-value == "" ? "No shortcut captured" : root.action-value; color: #e5ddda; font-size: 12px; overflow: elide; }
+                                        }
+                                        FocusScope {
+                                            height: 32px; vertical-stretch: 0;
+                                            key-pressed(event) => {
+                                                if root.capturing-shortcut && event.text != "" {
+                                                    root.capture-key((event.modifiers.control ? "CTRL+" : "") + (event.modifiers.shift ? "SHIFT+" : "") + (event.modifiers.alt ? "ALT+" : "") + (event.modifiers.meta ? "META+" : "") + (event.text == " " ? "SPACE" : event.text));
+                                                    root.capturing-shortcut = false;
+                                                    accept
+                                                } else { reject }
+                                            }
+                                            ActionButton { label: root.capturing-shortcut ? "Press shortcut…" : "Capture shortcut"; width: 100%; height: 32px; pressed => { root.capturing-shortcut = true; parent.focus(); } }
+                                        }
+                                        HorizontalLayout { height: 28px; spacing: 5px;
+                                            ActionButton { label: "Clear"; width: 80px; height: 28px; pressed => { root.action-value = ""; root.editor-dirty = true; } }
+                                            ActionButton { label: "Preview"; width: 90px; height: 28px; pressed => { root.test-action(); } }
+                                            AppText { text: "No input sent"; color: #88817e; font-size: 9px; vertical-alignment: center; }
+                                        }
+                                    }
+                                    if root.editor-kind == "macro": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        ComboBox { model: root.macro-options; current-index <=> root.macro-index; selected(value) => { root.action-value = value; root.macro-detail = value; root.editor-dirty = true; } }
+                                        AppText { text: root.macro-detail; color: #aaa3a0; font-size: 10px; wrap: word-wrap; }
+                                        ActionButton { label: "Open macro editor"; width: 100%; pressed => { root.open-macro-editor(); } }
+                                    }
+                                    if root.editor-kind == "website": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        LineEdit { height: 30px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-value; placeholder-text: "https://example.com"; edited => { root.editor-dirty = true; } }
+                                        LineEdit { height: 30px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-extra; placeholder-text: "Label (optional)"; edited => { root.editor-dirty = true; } }
+                                        AppText { text: "HTTP or HTTPS only · opens when host support exists"; color: #88817e; font-size: 9px; wrap: word-wrap; }
+                                    }
+                                    if root.editor-kind == "application": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        LineEdit { height: 29px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-value; placeholder-text: "Application name"; edited => { root.editor-dirty = true; } }
+                                        LineEdit { height: 29px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-extra; placeholder-text: "Path or application ID (optional)"; edited => { root.editor-dirty = true; } }
+                                        LineEdit { height: 29px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-arguments; placeholder-text: "Arguments as JSON array, e.g. [\"--new-window\"]"; edited => { root.editor-dirty = true; } }
+                                        AppText { text: "Manual entry · launch support is not enabled"; color: #88817e; font-size: 9px; }
+                                    }
+                                    if root.editor-kind == "mouseAction": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        ComboBox { model: ["Left click", "Right click", "Double click", "Scroll up", "Scroll down"]; current-value: root.action-value; selected(value) => { root.action-value = value; root.editor-dirty = true; } }
+                                        AppText { text: "Coordinates are not configured. This saves a named mock action only."; color: #88817e; font-size: 9px; wrap: word-wrap; }
+                                    }
+                                    if root.editor-kind == "macro" && root.editor-error != "": AppText { text: root.editor-error; color: #ff8a70; font-size: 10px; wrap: word-wrap; }
+                                    if root.editor-kind != "macro" && root.editor-error != "": AppText { text: root.editor-error; color: #ff8a70; font-size: 10px; wrap: word-wrap; }
+                                    AppText { text: root.editor-dirty ? "UNSAVED CHANGES" : "Saved assignment · local profile"; color: root.editor-dirty ? #ff9c72 : #88817e; font-size: 10px; }
+                                    HorizontalLayout { spacing: 5px;
+                                        ActionButton { label: "Save"; width: 70px; pressed => { root.save-action(root.editor-kind, root.action-value, root.action-extra, root.action-arguments); } }
+                                        ActionButton { label: "Cancel"; width: 76px; pressed => { root.cancel-action(); } }
+                                        ActionButton { label: "Clear"; width: 68px; pressed => { root.save-action("none", "", "", "[]"); } }
+                                    }
+                                    Rectangle { vertical-stretch: 1; }
+                                    AppText { text: "Changes stay in this profile. Host actions are not executed."; color: #88817e; font-size: 9px; wrap: word-wrap; }
+                                }
+                            }
+                        }
+
+                        if root.active-section == "Layers": VerticalLayout {
+                            spacing: 14px;
+                            AppText { text: "Four independent layers"; color: #f0ecea; font-size: 24px; }
+                            AppText { text: "Choose a layer to edit, or preview a press of the dedicated LYR switch."; color: #aaa3a0; font-size: 14px; }
+                            HorizontalLayout { spacing: 8px;
+                                for number in [1, 2, 3, 4]: ActionButton { width: 150px; height: 48px; active: root.active-layer == number; label: "LAYER \{number}"; pressed => { root.select-layer(number); } }
+                            }
+                            AppText { text: "Current editor layer: \{root.active-layer} · Startup layer: 1"; color: #d2cbc8; }
+                            ActionButton { label: "Press LYR · preview"; width: 156px; pressed => { root.cycle-lyr(); } }
+                        }
+                        if root.active-section == "Macros": VerticalLayout {
+                            spacing: 12px;
+                            AppText { text: "Macro actions"; color: #f0ecea; font-size: 24px; }
+                            AppText { text: "Build reusable action sequences. Actions are saved locally and are not executed."; color: #aaa3a0; font-size: 13px; }
+                            ComboBox { model: ["Key chord", "Website", "Software", "Clicks"]; current-value: root.macro-mode; selected(value) => { root.macro-mode = value; } }
+                            LineEdit { font-family: "Segoe UI"; font-size: 14px; text <=> root.macro-name; placeholder-text: "Macro name"; }
+                            LineEdit { font-family: "Segoe UI"; font-size: 14px; text <=> root.macro-value; placeholder-text: root.macro-mode == "Website" ? "https://example.com" : root.macro-mode == "Software" ? "Application name" : root.macro-mode == "Clicks" ? "Left click / Right click / Scroll up" : "Key chord, e.g. Ctrl+Shift+P"; }
+                            HorizontalLayout { spacing: 8px;
+                                LineEdit { width: 110px; font-family: "Segoe UI"; font-size: 13px; text <=> root.macro-delay; placeholder-text: "Delay after (ms)"; }
+                                ActionButton { label: "Add step"; width: 110px; pressed => { root.add-macro-step(root.macro-mode, root.macro-value, root.macro-delay); } }
+                            }
+                            ActionButton { label: "Save macro"; width: 128px; pressed => { root.save-macro(root.macro-mode, root.macro-name, root.macro-value); } }
+                            Rectangle { height: 1px; background: #393432; }
+                            AppText { text: "SAVED ACTION PREVIEW"; color: #948b88; font-size: 11px; }
+                            AppText { text: root.macro-preview; color: #e5ddda; font-size: 14px; wrap: word-wrap; }
+                        }
+                        if root.active-section == "Profiles": VerticalLayout {
+                            spacing: 12px;
+                            AppText { text: "Profiles"; color: #f0ecea; font-size: 24px; }
+                            AppText { text: "Active profile  ·  \{root.profile-name}"; color: #d2cbc8; }
+                            HorizontalLayout { spacing: 8px; LineEdit { font-family: "Segoe UI"; font-size: 14px; text <=> root.profile-name-edit; placeholder-text: "Rename active profile"; } ActionButton { label: "Save name"; width: 112px; pressed => { root.rename-profile(root.profile-name-edit); } } }
+                            HorizontalLayout { spacing: 8px; LineEdit { font-family: "Segoe UI"; font-size: 14px; text <=> root.new-profile-name; placeholder-text: "New profile name"; } ActionButton { label: "Create profile"; width: 126px; pressed => { root.create-profile(root.new-profile-name); } } }
+                        }
+                        if root.active-section == "Device settings": VerticalLayout {
+                            spacing: 6px;
+                            AppText { text: "Device settings"; color: #f0ecea; font-size: 24px; }
+                            AppText { text: "NO DEVICE HANDSHAKE · selecting a board or port does not establish a connection."; color: #d2cbc8; font-size: 13px; }
+                            AppText { text: "SELECT BOARD"; color: #948b88; font-size: 11px; }
+                            ComboBox { model: root.board-options; current-index <=> root.board-index; selected(value) => { root.board-selected(value); } }
+                            AppText { text: "SERIAL PORT"; color: #948b88; font-size: 11px; }
+                            HorizontalLayout { spacing: 8px;
+                                ComboBox { model: root.port-options; enabled: root.ports-available; current-index <=> root.port-index; selected(value) => { root.port-selected(value); } }
+                                ActionButton { label: "Refresh"; width: 88px; pressed => { root.refresh-ports(); } }
+                            }
+                            AppText { text: root.port-status; color: #aaa3a0; font-size: 12px; }
+                            Rectangle { height: 1px; background: #393432; }
+                            AppText { text: "Board revision  ·  provisional"; color: #d2cbc8; font-size: 13px; }
+                            AppText { text: "Matrix rows, columns, GPIO assignments, diode behavior and OLED controller are not verified."; color: #aaa3a0; font-size: 12px; wrap: word-wrap; }
+                            Rectangle { height: 1px; background: #393432; }
+                            AppText { text: "OLED PREVIEW · SIMULATED"; color: #ff875f; font-size: 12px; }
+                            AppText { text: "Controller, resolution and I²C address await hardware verification."; color: #aaa3a0; font-size: 12px; }
+                            HorizontalLayout { spacing: 12px;
+                                Rectangle { width: 300px; height: 92px; background: #111111; border-width: 1px; border-color: #3b3735; border-radius: 3px;
+                                    VerticalLayout { padding: 10px; spacing: 5px; AppText { text: "LAYER  \{root.active-layer}"; color: #e2dcda; font-size: 11px; }
+                                        HorizontalLayout { spacing: 5px; for number in [1, 2, 3, 4]: Rectangle { width: 42px; height: 30px; background: number == root.active-layer ? #a83f20 : #242222; border-width: number == root.active-layer ? 1px : 0px; border-color: #ff9677; AppText { text: "\{number}"; horizontal-alignment: center; vertical-alignment: center; color: number == root.active-layer ? #fff4ee : #aaa3a0; } } }
+                                        AppText { text: "Layer display · 5 seconds"; color: #9a9390; font-size: 10px; }
+                                    }
+                                }
+                                Rectangle { width: 300px; height: 92px; background: #111111; border-width: 1px; border-color: #3b3735; border-radius: 3px;
+                                    VerticalLayout { padding: 10px; spacing: 8px; AppText { text: "KOHLRAUSCH KONFIG"; color: #f0ecea; font-size: 15px; font-weight: 700; vertical-alignment: center; }
+                                        AppText { text: "Brand display · 5 seconds"; color: #9a9390; font-size: 10px; }
+                                    }
+                                }
+                            }
+                            AppText { text: "Layer change restarts the 10-second display cycle."; color: #aaa3a0; font-size: 12px; }
+                        }
+                        if root.active-section == "About & license": VerticalLayout {
+                            spacing: 18px;
+                            alignment: LayoutAlignment.start;
+                            HorizontalLayout {
+                                spacing: 18px;
+                                Image { source: @image-url("assets/visrodeck_instruments.png"); width: 92px; height: 92px; image-fit: contain; }
+                                VerticalLayout {
+                                    spacing: 6px;
+                                    AppText { text: "Kohlrausch Konfig"; color: #f3efed; font-size: 28px; font-weight: 600; }
+                                    AppText { text: "3×3 macropad configuration"; color: #aaa3a0; font-size: 14px; }
+                                }
+                            }
+                            Rectangle { height: 1px; background: #393432; }
+                            AppText { text: "LICENSE"; color: #ff875f; font-size: 12px; }
+                            AppText { text: "Licensed to Consumer By Visrodeck Technologies"; color: #e5ddda; font-size: 15px; }
+                            AppText { text: "All Rights Reserved."; color: #aaa3a0; font-size: 14px; }
+                            Rectangle { height: 1px; background: #393432; }
+                            AppText { text: "PACKAGED BY"; color: #948b88; font-size: 11px; }
+                            AppText { text: "EmtypyieCli <emtypyie&co>"; color: #e5ddda; font-size: 14px; }
+                        }
+                        if root.active-section == "Config Studio": VerticalLayout {
+                            spacing: 10px;
+                            AppText { text: "CONFIG STUDIO  /  \{root.profile-name}.json"; color: #f0ecea; font-size: 20px; font-weight: 600; }
+                            AppText { text: "This editor validates the active profile before saving."; color: #aaa3a0; font-size: 13px; }
+                            TextEdit { text <=> root.raw-config; vertical-stretch: 1; font-family: "Consolas"; font-size: 14px; }
+                            ActionButton { label: "Validate and save"; width: 156px; pressed => { root.save-raw-config(root.raw-config); } }
+                        }
+                        Rectangle { vertical-stretch: 1; }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            y: parent.height - 52px;
+            width: parent.width;
+            height: 52px; background: #171717;
+            VerticalLayout {
+                padding-left: 20px; padding-right: 20px; padding-top: 9px; padding-bottom: 9px;
+                HorizontalLayout {
+                    height: 34px; spacing: 12px;
+                    AppText { text: root.status-message; color: #b2aaa7; font-size: 12px; vertical-alignment: center; }
+                    Rectangle { horizontal-stretch: 1; }
+                    ActionButton { label: "FLASH"; width: 104px; pressed => { root.flash-request(); } }
+                    AppText { text: "UNAVAILABLE"; color: #796e80; font-size: 10px; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+}
+
+
+

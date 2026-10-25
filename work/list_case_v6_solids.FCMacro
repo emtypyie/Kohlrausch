@@ -1,0 +1,8 @@
+import FreeCAD as App
+p=r"C:\Users\workf\OneDrive\Documents\visrodeck_case_v6_color.FCStd"; d=App.openDocument(p)
+f=next(o for o in d.Objects if o.Name=="Feature")
+out=open(r"D:\EMTYPYIE\Kohlrausch\work\v6-solids.txt","w")
+for i,s in enumerate(f.Shape.Solids):
+ b=s.BoundBox
+ out.write(f"{i} center={b.Center.x:.1f},{b.Center.y:.1f},{b.Center.z:.1f} size={b.XLength:.1f},{b.YLength:.1f},{b.ZLength:.1f} faces={len(s.Faces)}\n")
+out.close()

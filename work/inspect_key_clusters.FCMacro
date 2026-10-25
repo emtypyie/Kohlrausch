@@ -1,0 +1,18 @@
+import FreeCAD as App
+import Part
+
+path = r"D:\DownLoad-D\kohlrausch_visrodeck.step"
+doc = App.newDocument("ReadOnlyInspect")
+Part.insert(path, doc.Name)
+doc.recompute()
+print("candidate objects:")
+for obj in doc.Objects:
+    if not hasattr(obj, "Shape") or obj.Shape.isNull():
+        continue
+    box = obj.Shape.BoundBox
+    dx, dy, dz = box.XLength, box.YLength, box.ZLength
+    cx, cy, cz = box.Center.x, box.Center.y, box.Center.z
+    if 3.0 < dx < 14.0 and 3.0 < dy < 14.0 and dz > 2.0:
+        print(obj.Name, round(cx, 2), round(cy, 2), round(cz, 2),
+              "size", round(dx, 2), round(dy, 2), round(dz, 2),
+              "faces", len(obj.Shape.Faces))

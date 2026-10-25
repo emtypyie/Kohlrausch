@@ -1,0 +1,109 @@
+STEP_OBJECTS 96
+STEP A_kohlrausch__visrodeck_final A_kohlrausch__visrodeck_final solids 1 faces 216 bounds 12.2 -50.37 0.0 75.68 37.87 1.6
+STEP A_kohlrausch__visrodeck_final001 A_kohlrausch__visrodeck_final001 solids 1 faces 252 bounds 58.69 -23.81 -2.08 66.87 -20.55 5.0
+STEP A_kohlrausch__visrodeck_final002 A_kohlrausch__visrodeck_final002 solids 1 faces 4 bounds 60.74 -23.53 -1.75 62.19 -21.78 -0.25
+STEP A_kohlrausch__visrodeck_final003 A_kohlrausch__visrodeck_final003 solids 1 faces 4 bounds 61.77 -23.16 -1.75 64.63 -20.89 -0.25
+STEP A_kohlrausch__visrodeck_final004 A_kohlrausch__visrodeck_final004 solids 1 faces 252 bounds 58.82 -42.99 -2.08 67.0 -39.72 5.0
+STEP A_kohlrausch__visrodeck_final005 A_kohlrausch__visrodeck_final005 solids 1 faces 4 bounds 60.87 -42.71 -1.75 62.32 -40.96 -0.25
+STEP A_kohlrausch__visrodeck_final006 A_kohlrausch__visrodeck_final006 solids 1 faces 4 bounds 61.9 -42.33 -1.75 64.76 -40.07 -0.25
+STEP A_kohlrausch__visrodeck_final007 A_kohlrausch__visrodeck_final007 solids 1 faces 252 bounds 39.13 -4.89 -2.08 47.31 -1.62 5.0
+STEP A_kohlrausch__visrodeck_final008 A_kohlrausch__visrodeck_final008 solids 1 faces 4 bounds 41.18 -4.61 -1.75 42.63 -2.86 -0.25
+STEP A_kohlrausch__visrodeck_final009 A_kohlrausch__visrodeck_final009 solids 1 faces 4 bounds 42.21 -4.23 -1.75 45.08 -1.97 -0.25
+STEP A_kohlrausch__visrodeck_final010 A_kohlrausch__visrodeck_final010 solids 1 faces 252 bounds 39.39 -23.81 -2.08 47.57 -20.55 5.0
+STEP A_kohlrausch__visrodeck_final011 A_kohlrausch__visrodeck_final011 solids 1 faces 4 bounds 41.43 -23.53 -1.75 42.89 -21.78 -0.25
+STEP A_kohlrausch__visrodeck_final012 A_kohlrausch__visrodeck_final012 solids 1 faces 4 bounds 42.47 -23.16 -1.75 45.33 -20.89 -0.25
+STEP A_kohlrausch__visrodeck_final013 A_kohlrausch__visrodeck_final013 solids 1 faces 252 bounds 39.39 -42.99 -2.08 47.57 -39.72 5.0
+STEP A_kohlrausch__visrodeck_final014 A_kohlrausch__visrodeck_final014 solids 1 faces 4 bounds 41.43 -42.71 -1.75 42.89 -40.96 -0.25
+STEP A_kohlrausch__visrodeck_final015 A_kohlrausch__visrodeck_final015 solids 1 faces 4 bounds 42.47 -42.33 -1.75 45.33 -40.07 -0.25
+STEP A_kohlrausch__visrodeck_final016 A_kohlrausch__visrodeck_final016 solids 1 faces 252 bounds 20.08 -4.89 -2.08 28.26 -1.62 5.0
+STEP A_kohlrausch__visrodeck_final017 A_kohlrausch__visrodeck_final017 solids 1 faces 4 bounds 22.13 -4.61 -1.75 23.58 -2.86 -0.25
+STEP A_kohlrausch__visrodeck_final018 A_kohlrausch__visrodeck_final018 solids 1 faces 4 bounds 23.16 -4.23 -1.75 26.03 -1.97 -0.25
+STEP A_kohlrausch__visrodeck_final019 A_kohlrausch__visrodeck_final019 solids 1 faces 252 bounds 20.46 -23.81 -2.08 28.64 -20.55 5.0
+STEP A_kohlrausch__visrodeck_final020 A_kohlrausch__visrodeck_final020 solids 1 faces 4 bounds 22.51 -23.53 -1.75 23.96 -21.78 -0.25
+STEP A_kohlrausch__visrodeck_final021 A_kohlrausch__visrodeck_final021 solids 1 faces 4 bounds 23.54 -23.16 -1.75 26.41 -20.89 -0.25
+STEP A_kohlrausch__visrodeck_final022 A_kohlrausch__visrodeck_final022 solids 1 faces 252 bounds 20.34 -42.99 -2.08 28.52 -39.72 5.0
+STEP A_kohlrausch__visrodeck_final023 A_kohlrausch__visrodeck_final023 solids 1 faces 4 bounds 22.38 -42.71 -1.75 23.84 -40.96 -0.25
+STEP A_kohlrausch__visrodeck_final024 A_kohlrausch__visrodeck_final024 solids 1 faces 4 bounds 23.42 -42.33 -1.75 26.28 -40.07 -0.25
+STEP A_kohlrausch__visrodeck_final025 A_kohlrausch__visrodeck_final025 solids 1 faces 252 bounds 20.54 19.87 -2.08 29.25 22.03 5.0
+STEP A_kohlrausch__visrodeck_final026 A_kohlrausch__visrodeck_final026 solids 1 faces 4 bounds 25.79 20.2 -1.75 26.79 21.7 -0.25
+STEP A_kohlrausch__visrodeck_final027 A_kohlrausch__visrodeck_final027 solids 1 faces 4 bounds 23.19 20.2 -1.75 25.69 21.7 -0.25
+STEP A_kohlrausch__visrodeck_final028 A_kohlrausch__visrodeck_final028 solids 1 faces 252 bounds 58.18 -4.89 -2.08 66.36 -1.62 5.0
+STEP A_kohlrausch__visrodeck_final029 A_kohlrausch__visrodeck_final029 solids 1 faces 4 bounds 60.23 -4.61 -1.75 61.68 -2.86 -0.25
+STEP A_kohlrausch__visrodeck_final030 A_kohlrausch__visrodeck_final030 solids 1 faces 4 bounds 61.26 -4.23 -1.75 64.13 -1.97 -0.25
+STEP A_kohlrausch__visrodeck_final031 A_kohlrausch__visrodeck_final031 solids 1 faces 233 bounds 53.48 23.57 2.12 54.97 25.7 2.21
+STEP A_kohlrausch__visrodeck_final032 A_kohlrausch__visrodeck_final032 solids 1 faces 30 bounds 53.48 23.57 1.6 54.97 25.7 2.12
+STEP A_kohlrausch__visrodeck_final033 A_kohlrausch__visrodeck_final033 solids 1 faces 606 bounds 35.32 13.3 1.79 53.32 36.8 3.91
+STEP A_kohlrausch__visrodeck_final034 A_kohlrausch__visrodeck_final034 solids 1 faces 162 bounds 39.85 31.5 1.6 48.79 38.0 5.66
+STEP A_kohlrausch__visrodeck_final035 A_kohlrausch__visrodeck_final035 solids 1 faces 121 bounds 40.15 31.09 1.9 48.49 37.9 5.36
+STEP A_kohlrausch__visrodeck_final036 A_kohlrausch__visrodeck_final036 solids 1 faces 140 bounds 64.71 -13.4 -1.9 69.34 -11.39 0.71
+STEP A_kohlrausch__visrodeck_final037 A_kohlrausch__visrodeck_final037 solids 1 faces 140 bounds 54.82 -16.08 -1.9 59.45 -14.07 0.71
+STEP A_kohlrausch__visrodeck_final038 A_kohlrausch__visrodeck_final038 solids 1 faces 756 bounds 56.34 -16.74 -1.9 67.6 -10.52 1.32
+STEP A_kohlrausch__visrodeck_final039 A_kohlrausch__visrodeck_final039 solids 1 faces 3 bounds 57.08 -13.57 -0.31 58.08 -12.57 -0.21
+STEP A_kohlrausch__visrodeck_final040 A_kohlrausch__visrodeck_final040 solids 1 faces 3 bounds 61.28 -13.57 -0.31 62.88 -11.97 -0.21
+STEP A_kohlrausch__visrodeck_final041 A_kohlrausch__visrodeck_final041 solids 1 faces 3 bounds 65.73 -14.62 -0.31 66.43 -13.92 -0.21
+STEP A_kohlrausch__visrodeck_final042 A_kohlrausch__visrodeck_final042 solids 1 faces 140 bounds 64.81 -32.45 -1.9 69.44 -30.44 0.71
+STEP A_kohlrausch__visrodeck_final043 A_kohlrausch__visrodeck_final043 solids 1 faces 140 bounds 54.92 -35.13 -1.9 59.55 -33.12 0.71
+STEP A_kohlrausch__visrodeck_final044 A_kohlrausch__visrodeck_final044 solids 1 faces 756 bounds 56.44 -35.79 -1.9 67.7 -29.57 1.32
+STEP A_kohlrausch__visrodeck_final045 A_kohlrausch__visrodeck_final045 solids 1 faces 3 bounds 57.18 -32.62 -0.3 58.18 -31.62 -0.2
+STEP A_kohlrausch__visrodeck_final046 A_kohlrausch__visrodeck_final046 solids 1 faces 3 bounds 61.38 -32.62 -0.3 62.98 -31.02 -0.2
+STEP A_kohlrausch__visrodeck_final047 A_kohlrausch__visrodeck_final047 solids 1 faces 3 bounds 65.83 -33.67 -0.3 66.53 -32.97 -0.2
+STEP A_kohlrausch__visrodeck_final048 A_kohlrausch__visrodeck_final048 solids 1 faces 140 bounds 45.66 5.65 -1.5 50.29 7.66 1.11
+STEP A_kohlrausch__visrodeck_final049 A_kohlrausch__visrodeck_final049 solids 1 faces 140 bounds 35.77 2.97 -1.5 40.4 4.98 1.11
+STEP A_kohlrausch__visrodeck_final050 A_kohlrausch__visrodeck_final050 solids 1 faces 756 bounds 37.29 2.31 -1.5 48.55 8.53 1.72
+STEP A_kohlrausch__visrodeck_final051 A_kohlrausch__visrodeck_final051 solids 1 faces 3 bounds 38.03 5.48 0.1 39.03 6.48 0.2
+STEP A_kohlrausch__visrodeck_final052 A_kohlrausch__visrodeck_final052 solids 1 faces 3 bounds 42.23 5.48 0.1 43.83 7.08 0.2
+STEP A_kohlrausch__visrodeck_final053 A_kohlrausch__visrodeck_final053 solids 1 faces 3 bounds 46.68 4.43 0.1 47.38 5.13 0.2
+STEP A_kohlrausch__visrodeck_final054 A_kohlrausch__visrodeck_final054 solids 1 faces 140 bounds 45.66 -13.4 -1.9 50.29 -11.39 0.71
+STEP A_kohlrausch__visrodeck_final055 A_kohlrausch__visrodeck_final055 solids 1 faces 140 bounds 35.77 -16.08 -1.9 40.4 -14.07 0.71
+STEP A_kohlrausch__visrodeck_final056 A_kohlrausch__visrodeck_final056 solids 1 faces 756 bounds 37.29 -16.74 -1.9 48.55 -10.52 1.32
+STEP A_kohlrausch__visrodeck_final057 A_kohlrausch__visrodeck_final057 solids 1 faces 3 bounds 38.03 -13.57 -0.31 39.03 -12.57 -0.21
+STEP A_kohlrausch__visrodeck_final058 A_kohlrausch__visrodeck_final058 solids 1 faces 3 bounds 42.23 -13.57 -0.31 43.83 -11.97 -0.21
+STEP A_kohlrausch__visrodeck_final059 A_kohlrausch__visrodeck_final059 solids 1 faces 3 bounds 46.68 -14.62 -0.31 47.38 -13.92 -0.21
+STEP A_kohlrausch__visrodeck_final060 A_kohlrausch__visrodeck_final060 solids 1 faces 140 bounds 45.66 -32.45 -1.9 50.29 -30.44 0.71
+STEP A_kohlrausch__visrodeck_final061 A_kohlrausch__visrodeck_final061 solids 1 faces 140 bounds 35.77 -35.13 -1.9 40.4 -33.12 0.71
+STEP A_kohlrausch__visrodeck_final062 A_kohlrausch__visrodeck_final062 solids 1 faces 756 bounds 37.29 -35.79 -1.9 48.55 -29.57 1.32
+STEP A_kohlrausch__visrodeck_final063 A_kohlrausch__visrodeck_final063 solids 1 faces 3 bounds 38.03 -32.62 -0.31 39.03 -31.62 -0.21
+STEP A_kohlrausch__visrodeck_final064 A_kohlrausch__visrodeck_final064 solids 1 faces 3 bounds 42.23 -32.62 -0.31 43.83 -31.02 -0.21
+STEP A_kohlrausch__visrodeck_final065 A_kohlrausch__visrodeck_final065 solids 1 faces 3 bounds 46.68 -33.67 -0.31 47.38 -32.97 -0.21
+STEP A_kohlrausch__visrodeck_final066 A_kohlrausch__visrodeck_final066 solids 1 faces 140 bounds 26.61 5.65 -1.9 31.24 7.66 0.71
+STEP A_kohlrausch__visrodeck_final067 A_kohlrausch__visrodeck_final067 solids 1 faces 140 bounds 16.72 2.97 -1.9 21.35 4.98 0.71
+STEP A_kohlrausch__visrodeck_final068 A_kohlrausch__visrodeck_final068 solids 1 faces 756 bounds 18.24 2.31 -1.9 29.5 8.53 1.32
+STEP A_kohlrausch__visrodeck_final069 A_kohlrausch__visrodeck_final069 solids 1 faces 3 bounds 18.98 5.48 -0.31 19.98 6.48 -0.21
+STEP A_kohlrausch__visrodeck_final070 A_kohlrausch__visrodeck_final070 solids 1 faces 3 bounds 23.18 5.48 -0.31 24.78 7.08 -0.21
+STEP A_kohlrausch__visrodeck_final071 A_kohlrausch__visrodeck_final071 solids 1 faces 3 bounds 27.63 4.43 -0.31 28.33 5.13 -0.21
+STEP A_kohlrausch__visrodeck_final072 A_kohlrausch__visrodeck_final072 solids 1 faces 140 bounds 26.61 -13.4 -1.9 31.24 -11.39 0.71
+STEP A_kohlrausch__visrodeck_final073 A_kohlrausch__visrodeck_final073 solids 1 faces 140 bounds 16.72 -16.08 -1.9 21.35 -14.07 0.71
+STEP A_kohlrausch__visrodeck_final074 A_kohlrausch__visrodeck_final074 solids 1 faces 756 bounds 18.24 -16.74 -1.9 29.5 -10.52 1.32
+STEP A_kohlrausch__visrodeck_final075 A_kohlrausch__visrodeck_final075 solids 1 faces 3 bounds 18.98 -13.57 -0.31 19.98 -12.57 -0.21
+STEP A_kohlrausch__visrodeck_final076 A_kohlrausch__visrodeck_final076 solids 1 faces 3 bounds 23.18 -13.57 -0.31 24.78 -11.97 -0.21
+STEP A_kohlrausch__visrodeck_final077 A_kohlrausch__visrodeck_final077 solids 1 faces 3 bounds 27.63 -14.62 -0.31 28.33 -13.92 -0.21
+STEP A_kohlrausch__visrodeck_final078 A_kohlrausch__visrodeck_final078 solids 1 faces 140 bounds 26.61 -32.45 -1.9 31.24 -30.44 0.71
+STEP A_kohlrausch__visrodeck_final079 A_kohlrausch__visrodeck_final079 solids 1 faces 140 bounds 16.72 -35.13 -1.9 21.35 -33.12 0.71
+STEP A_kohlrausch__visrodeck_final080 A_kohlrausch__visrodeck_final080 solids 1 faces 756 bounds 18.24 -35.79 -1.9 29.5 -29.57 1.32
+STEP A_kohlrausch__visrodeck_final081 A_kohlrausch__visrodeck_final081 solids 1 faces 3 bounds 18.98 -32.62 -0.31 19.98 -31.62 -0.21
+STEP A_kohlrausch__visrodeck_final082 A_kohlrausch__visrodeck_final082 solids 1 faces 3 bounds 23.18 -32.62 -0.31 24.78 -31.02 -0.21
+STEP A_kohlrausch__visrodeck_final083 A_kohlrausch__visrodeck_final083 solids 1 faces 3 bounds 27.63 -33.67 -0.31 28.33 -32.97 -0.21
+STEP A_kohlrausch__visrodeck_final084 A_kohlrausch__visrodeck_final084 solids 1 faces 140 bounds 26.95 29.49 -1.9 31.58 31.5 0.71
+STEP A_kohlrausch__visrodeck_final085 A_kohlrausch__visrodeck_final085 solids 1 faces 140 bounds 17.06 26.81 -1.9 21.69 28.82 0.71
+STEP A_kohlrausch__visrodeck_final086 A_kohlrausch__visrodeck_final086 solids 1 faces 756 bounds 18.57 26.15 -1.9 29.84 32.37 1.32
+STEP A_kohlrausch__visrodeck_final087 A_kohlrausch__visrodeck_final087 solids 1 faces 3 bounds 19.32 29.32 -0.31 20.32 30.32 -0.21
+STEP A_kohlrausch__visrodeck_final088 A_kohlrausch__visrodeck_final088 solids 1 faces 3 bounds 23.52 29.32 -0.31 25.12 30.92 -0.21
+STEP A_kohlrausch__visrodeck_final089 A_kohlrausch__visrodeck_final089 solids 1 faces 3 bounds 27.97 28.27 -0.31 28.67 28.97 -0.21
+STEP A_kohlrausch__visrodeck_final090 A_kohlrausch__visrodeck_final090 solids 1 faces 140 bounds 64.71 5.65 -1.9 69.34 7.66 0.71
+STEP A_kohlrausch__visrodeck_final091 A_kohlrausch__visrodeck_final091 solids 1 faces 140 bounds 54.82 2.97 -1.9 59.45 4.98 0.71
+STEP A_kohlrausch__visrodeck_final092 A_kohlrausch__visrodeck_final092 solids 1 faces 756 bounds 56.34 2.31 -1.9 67.6 8.53 1.32
+STEP A_kohlrausch__visrodeck_final093 A_kohlrausch__visrodeck_final093 solids 1 faces 3 bounds 57.08 5.48 -0.3 58.08 6.48 -0.2
+STEP A_kohlrausch__visrodeck_final094 A_kohlrausch__visrodeck_final094 solids 1 faces 3 bounds 61.28 5.48 -0.3 62.88 7.08 -0.2
+STEP A_kohlrausch__visrodeck_final095 A_kohlrausch__visrodeck_final095 solids 1 faces 3 bounds 65.73 4.43 -0.3 66.43 5.13 -0.2
+FCSTD Kohlrausch_Tray_Fit_Check OBJECTS 2
+FC Feature A_kohlrausch__visrodeck_final type Part::Feature solids 96 faces 14418 bounds -31.74 -44.19 -2.08 31.74 44.19 5.66
+FreeCAD 1.1.1, Libs: 1.1.1R20260414 (Git shallow)
+(C) 2001-2026 FreeCAD contributors
+FreeCAD is free and open-source software licensed under the terms of LGPL2+ license.
+
+Recompute......
+						(1 %)							(2 %)							(3 %)							(4 %)							(5 %)							(6 %)							(7 %)							(8 %)							(9 %)							(10 %)							(11 %)							(12 %)							(13 %)							(14 %)							(15 %)							(16 %)							(17 %)							(18 %)							(19 %)							(20 %)							(21 %)							(22 %)							(23 %)							(25 %)							(26 %)							(27 %)							(28 %)							(29 %)							(30 %)							(31 %)							(32 %)							(33 %)							(34 %)							(35 %)							(36 %)							(37 %)							(38 %)							(39 %)							(40 %)							(41 %)							(42 %)							(43 %)							(44 %)							(45 %)							(46 %)							(47 %)							(48 %)							(50 %)							(51 %)							(52 %)							(53 %)							(54 %)							(55 %)							(56 %)							(57 %)							(58 %)							(59 %)							(60 %)							(61 %)							(62 %)							(63 %)							(64 %)							(65 %)							(66 %)							(67 %)							(68 %)							(69 %)							(70 %)							(71 %)							(72 %)							(73 %)							(75 %)							(76 %)							(77 %)							(78 %)							(79 %)							(80 %)							(81 %)							(82 %)							(83 %)							(84 %)							(85 %)							(86 %)							(87 %)							(88 %)							(89 %)							(90 %)							(91 %)							(92 %)							(93 %)							(94 %)							(95 %)							(96 %)							(97 %)							(98 %)							(100 %)									Recompute......
+						(1 %)							(2 %)							(3 %)							(4 %)							(5 %)							(6 %)							(7 %)							(8 %)							(9 %)							(10 %)							(11 %)							(12 %)							(13 %)							(14 %)							(15 %)							(16 %)							(17 %)							(18 %)							(19 %)							(20 %)							(21 %)							(22 %)							(23 %)							(25 %)							(26 %)							(27 %)							(28 %)							(29 %)							(30 %)							(31 %)							(32 %)							(33 %)							(34 %)							(35 %)							(36 %)							(37 %)							(38 %)							(39 %)							(40 %)							(41 %)							(42 %)							(43 %)							(44 %)							(45 %)							(46 %)							(47 %)							(48 %)							(50 %)							(51 %)							(52 %)							(53 %)							(54 %)							(55 %)							(56 %)							(57 %)							(58 %)							(59 %)							(60 %)							(61 %)							(62 %)							(63 %)							(64 %)							(65 %)							(66 %)							(67 %)							(68 %)							(69 %)							(70 %)							(71 %)							(72 %)							(73 %)							(75 %)							(76 %)							(77 %)							(78 %)							(79 %)							(80 %)							(81 %)							(82 %)							(83 %)							(84 %)							(85 %)							(86 %)							(87 %)							(88 %)							(89 %)							(90 %)							(91 %)							(92 %)							(93 %)							(94 %)							(95 %)							(96 %)							(97 %)							(98 %)							(100 %)									Importing project files......
+						(33 %)							(66 %)							(100 %)									Postprocessing......
+						(100 %)									Recompute......
+						(50 %)							(100 %)									
