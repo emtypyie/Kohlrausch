@@ -5,7 +5,12 @@ endif()
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 project(kohlrausch_firmware C CXX ASM)
 pico_sdk_init()
-add_executable(kohlrausch_firmware src/main.cpp src/layer_logic.cpp)
+add_executable(kohlrausch_firmware
+  src/main.cpp
+  src/layer_logic.cpp
+  src/runtime_logic.cpp
+)
+target_compile_features(kohlrausch_firmware PRIVATE cxx_std_17)
 target_include_directories(kohlrausch_firmware PRIVATE include src)
 target_link_libraries(kohlrausch_firmware pico_stdlib)
 pico_add_extra_outputs(kohlrausch_firmware)

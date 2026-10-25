@@ -97,7 +97,18 @@ pub struct MacroDefinition {
     pub macro_id: String,
     pub name: String,
     pub steps: Vec<MacroStep>,
+    #[serde(default)] pub timing: MacroTiming,
+    #[serde(default)] pub fixed_delay_ms: u32,
+    #[serde(default)] pub loop_mode: MacroLoopMode,
 }
+
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum MacroTiming { Recorded, #[default] Fixed }
+
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "mode", content = "count", rename_all = "camelCase")]
+pub enum MacroLoopMode { #[default] Once, UntilStop, UntilAnyClick, Count(u16) }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -124,6 +135,8 @@ impl MacroDefinition {
         if self.name.trim().is_empty() || self.name.chars().count() > 64 { return Err("Macro name must contain 1–64 characters".into()); }
         if self.steps.is_empty() { return Err("Add at least one step to the macro".into()); }
         if self.steps.len() > 64 { return Err("A macro can contain at most 64 steps".into()); }
+        if self.fixed_delay_ms > 600_000 { return Err("Fixed delay cannot exceed 10 minutes".into()); }
+        if matches!(self.loop_mode, MacroLoopMode::Count(0) | MacroLoopMode::Count(10_001..=u16::MAX)) { return Err("Loop count must be between 1 and 10,000".into()); }
         for step in &self.steps {
             if step.delay_ms > 600_000 { return Err("Step delay cannot exceed 10 minutes".into()); }
             validate_macro_step_action(&step.action)?;
@@ -171,6 +184,7 @@ fn validate_macro_step_action(action: &KeyAction) -> Result<(), String> {
 }
 
 pub fn normalize_key_chord(input: &str) -> Result<Vec<String>, String> {
+    if input.trim() == "+" { return Ok(vec!["PLUS".to_owned()]); }
     let raw_tokens = input.split('+').collect::<Vec<_>>();
     let mut tokens = Vec::with_capacity(raw_tokens.len());
     for (index, token) in raw_tokens.iter().enumerate() {
@@ -194,6 +208,7 @@ pub fn normalize_key_chord(input: &str) -> Result<Vec<String>, String> {
             "ARROWDOWN" => "DOWN".to_owned(),
             "ARROWLEFT" => "LEFT".to_owned(),
             "ARROWRIGHT" => "RIGHT".to_owned(),
+            "+" => "PLUS".to_owned(),
             " " => "SPACE".to_owned(),
             _ if is_supported_key(&upper) => upper,
             _ => return Err(format!("Unsupported key: {token}")),
@@ -222,7 +237,9 @@ fn validate_key_chord(keys: &[String]) -> Result<(), String> {
 
 fn is_supported_key(key: &str) -> bool {
     matches!(key, "SPACE" | "ENTER" | "ESC" | "TAB" | "BACKSPACE" | "DELETE" | "INSERT" | "HOME" | "END" | "PAGEUP" | "PAGEDOWN" | "UP" | "DOWN" | "LEFT" | "RIGHT" | "PRINTSCREEN" | "PAUSE")
+        || matches!(key, "PLUS" | "MINUS" | "EQUAL" | "COMMA" | "PERIOD" | "SLASH" | "SEMICOLON" | "APOSTROPHE" | "LBRACKET" | "RBRACKET" | "BACKSLASH" | "GRAVE" | "TILDE" | "BANG" | "AT" | "HASH" | "DOLLAR" | "PERCENT" | "CARET" | "AMPERSAND" | "ASTERISK" | "LPAREN" | "RPAREN" | "UNDERSCORE" | "LBRACE" | "RBRACE" | "PIPE" | "COLON" | "QUOTE" | "LESS" | "GREATER" | "QUESTION")
         || (key.len() == 1 && key.as_bytes()[0].is_ascii_alphanumeric())
+        || (key.len() == 1 && "-=[]\\;',./`~!@#$%^&*()_{}|:\"<>?".contains(key))
         || key.strip_prefix('F').is_some_and(|number| number.parse::<u8>().is_ok_and(|number| (1..=24).contains(&number)))
 }
 
@@ -435,6 +452,8 @@ mod tests {
     fn chord_website_application_and_mouse_actions_round_trip() {
         assert_eq!(normalize_key_chord("Ctrl+Shift+P").unwrap(), vec!["CTRL", "SHIFT", "P"]);
         assert_eq!(normalize_key_chord("CTRL+SPACE").unwrap(), vec!["CTRL", "SPACE"]);
+        assert_eq!(normalize_key_chord("CTRL+PLUS").unwrap(), vec!["CTRL", "PLUS"]);
+        assert_eq!(normalize_key_chord(".").unwrap(), vec!["."]);
         assert!(normalize_key_chord("Ctrl+NoSuchKey").is_err());
         assert!(normalize_key_chord("").is_err());
         let mut profile = Profile::default_profile();
@@ -458,6 +477,9 @@ mod tests {
                 MacroStep { delay_ms: 120, action: KeyAction::KeyChord { keys: vec!["CTRL".into(), "K".into()] } },
                 MacroStep { delay_ms: 0, action: KeyAction::MouseAction { action: MouseActionKind::DoubleClick } },
             ],
+            timing: MacroTiming::Recorded,
+            fixed_delay_ms: 1,
+            loop_mode: MacroLoopMode::Count(3),
         });
         library.validate().unwrap();
         let reference = KeyAction::MacroReference { macro_id: "open-docs".into() };
@@ -471,6 +493,20 @@ mod tests {
     }
 
     #[test]
+    fn older_macro_definitions_default_to_fixed_once_settings() {
+        let older = serde_json::json!({
+            "schemaVersion": 1,
+            "macroId": "legacy",
+            "name": "Legacy",
+            "steps": [{"delayMs": 0, "action": {"kind": "keyChord", "keys": ["A"]}}]
+        });
+        let parsed: MacroDefinition = serde_json::from_value(older).unwrap();
+        assert_eq!(parsed.timing, MacroTiming::Fixed);
+        assert_eq!(parsed.loop_mode, MacroLoopMode::Once);
+        parsed.validate().unwrap();
+    }
+
+    #[test]
     fn macro_library_persists_with_recovery_backup() {
         let dir = std::env::temp_dir().join(format!("kohlrausch-macros-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
@@ -478,7 +514,7 @@ mod tests {
         let first = MacroLibrary::default();
         save_macro_library_at(&first, &path, &dir).unwrap();
         let mut updated = first.clone();
-        updated.macros.push(MacroDefinition { schema_version: 1, macro_id: "docs".into(), name: "Docs".into(), steps: vec![MacroStep { delay_ms: 0, action: KeyAction::Website { url: "https://example.com".into(), label: None } }] });
+        updated.macros.push(MacroDefinition { schema_version: 1, macro_id: "docs".into(), name: "Docs".into(), steps: vec![MacroStep { delay_ms: 0, action: KeyAction::Website { url: "https://example.com".into(), label: None } }], timing: MacroTiming::Fixed, fixed_delay_ms: 0, loop_mode: MacroLoopMode::Once });
         save_macro_library_at(&updated, &path, &dir).unwrap();
         let saved: MacroLibrary = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(saved, updated);

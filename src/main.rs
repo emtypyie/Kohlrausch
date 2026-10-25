@@ -8,10 +8,10 @@ mod scene;
 
 use app_state::SelectionState;
 use clap::{Parser, Subcommand};
-use config::{load_or_create_default, load_macro_library, save_macro_library, save_profile, KeyAction, MacroDefinition, MacroLibrary, MacroStep, MouseActionKind, Profile};
+use config::{load_or_create_default, load_macro_library, save_macro_library, save_profile, KeyAction, MacroDefinition, MacroLibrary, MacroLoopMode, MacroStep, MacroTiming, MouseActionKind, Profile};
 use scene::Camera;
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode};
-use std::{cell::{Cell, RefCell}, error::Error, rc::Rc, time::Duration};
+use std::{cell::{Cell, RefCell}, error::Error, rc::Rc, time::{Duration, Instant}};
 
 const SCENE_WIDTH: usize = 840;
 const SCENE_HEIGHT: usize = 540;
@@ -144,13 +144,15 @@ fn set_assignment(ui: &MainWindow, profile: &Profile, state: &SelectionState, ma
     ui.set_editor_error("".into());
     ui.set_capturing_shortcut(false);
     let options = macros.macros.iter().map(|item| format!("{} · {} step(s) · {} · {}", item.name, item.steps.len(), display_action(&item.steps[0].action), item.macro_id).into()).collect::<Vec<slint::SharedString>>();
+    let names = macros.macros.iter().map(|item| item.name.clone().into()).collect::<Vec<slint::SharedString>>();
     let macro_index = match assigned { KeyAction::MacroReference { macro_id } => macros.macros.iter().position(|item| &item.macro_id == macro_id).map(|index| index as i32).unwrap_or(-1), _ => -1 };
     let macro_detail = match assigned {
         KeyAction::MacroReference { macro_id } => macros.find(macro_id).map(|item| format!("{} · {} step(s) · {}", item.name, item.steps.len(), display_action(&item.steps[0].action))).unwrap_or_else(|| format!("Missing macro · {macro_id}")),
         _ => "Select a saved macro".to_owned(),
     };
     ui.set_macro_options(model_rc(options));
-    ui.set_macro_index(macro_index);
+    ui.set_macro_names(model_rc(names));
+    ui.set_inspector_macro_index(macro_index);
     ui.set_macro_detail(macro_detail.into());
     if matches!(assigned, KeyAction::MacroReference { macro_id } if macros.find(macro_id).is_none()) {
         ui.set_editor_error("This assignment refers to a macro that is not in the saved macro library.".into());
@@ -240,6 +242,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let macro_load = load_macro_library();
     let macros = Rc::new(RefCell::new(macro_load.clone().unwrap_or_default()));
     let macro_draft: Rc<RefCell<Vec<MacroStep>>> = Rc::new(RefCell::new(Vec::new()));
+    let macro_selected_id: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
+    let last_macro_capture: Rc<RefCell<Option<Instant>>> = Rc::new(RefCell::new(None));
     let assign_macro_on_save = Rc::new(Cell::new(false));
     let state = Rc::new(RefCell::new(SelectionState::default()));
     let scene_cache = Rc::new(RefCell::new(None));
@@ -248,6 +252,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     ui.set_raw_config(serde_json::to_string_pretty(&*profile.borrow())?.into());
     ui.set_status_message("Local profile · hardware not connected".into());
     ui.set_macro_preview(macro_library_summary(&macros.borrow()).into());
+    refresh_macro_library(&ui, &macros.borrow());
+    refresh_macro_events(&ui, &macro_draft.borrow());
     ui.set_board_options(model_rc(vec!["Kohlrausch RP2040 · Rev A (provisional)".into()]));
     ui.set_board_index(0);
     ui.set_board_name("Kohlrausch RP2040 · Rev A (provisional)".into());
@@ -262,7 +268,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     update_selection_marker(&ui, &state.borrow(), scene_cache.borrow().as_ref());
 
     let weak = ui.as_weak();
-    ui.on_navigate(move |section| if let Some(ui) = weak.upgrade() { ui.set_active_section(section); });
+    ui.on_navigate(move |section| if let Some(ui) = weak.upgrade() {
+        if section.as_str() != "Macros" && ui.get_macro_recording() { ui.set_macro_recording(false); }
+        ui.set_active_section(section);
+    });
 
     let state_for_key = state.clone();
     let profile_for_key = profile.clone();
@@ -320,11 +329,163 @@ fn main() -> Result<(), Box<dyn Error>> {
             match result {
                 Ok(step) => {
                     let mut draft = draft_for_add.borrow_mut();
+                    if draft.len() >= 64 { ui.set_macro_error("A macro can contain at most 64 events".into()); return; }
                     draft.push(step.clone());
-                    ui.set_macro_preview(draft.iter().enumerate().map(|(index, step)| format!("{}. {} · {} ms delay after", index + 1, display_action(&step.action), step.delay_ms)).collect::<Vec<_>>().join("\n").into());
+                    refresh_macro_events(&ui, &draft);
+                    ui.set_macro_error("".into());
+                    ui.set_macro_event_index((draft.len() as i32) - 1);
                     ui.set_status_message(format!("Added step {} · preview only until macro is saved", draft.len()).into());
                 }
-                Err(error) => { ui.set_macro_preview(format!("Could not add step: {error}").into()); ui.set_status_message(error.into()); }
+                Err(error) => { ui.set_macro_error(error.clone().into()); ui.set_status_message(error.into()); }
+            }
+        }
+    });
+
+    let draft_for_new = macro_draft.clone();
+    let selected_for_new = macro_selected_id.clone();
+    let last_capture_for_new = last_macro_capture.clone();
+    let weak = ui.as_weak();
+    ui.on_new_macro(move || {
+        *draft_for_new.borrow_mut() = Vec::new();
+        *selected_for_new.borrow_mut() = None;
+        *last_capture_for_new.borrow_mut() = None;
+        if let Some(ui) = weak.upgrade() {
+            ui.set_macro_index(-1);
+            ui.set_macro_name("".into());
+            ui.set_macro_event_index(-1);
+            ui.set_macro_error("".into());
+            ui.set_macro_recording(false);
+            ui.set_macro_timing("Fixed delay".into());
+            ui.set_macro_delay("1".into());
+            ui.set_macro_loop("Once".into());
+            ui.set_macro_loop_count("1".into());
+            refresh_macro_events(&ui, &draft_for_new.borrow());
+            ui.set_status_message("New macro draft · add events, then save".into());
+        }
+    });
+
+    let draft_for_select = macro_draft.clone();
+    let selected_for_select = macro_selected_id.clone();
+    let macros_for_select = macros.clone();
+    let weak = ui.as_weak();
+    ui.on_select_macro(move |index| {
+        let library = macros_for_select.borrow();
+        let Some(definition) = usize::try_from(index).ok().and_then(|index| library.macros.get(index)) else { return; };
+        *selected_for_select.borrow_mut() = Some(definition.macro_id.clone());
+        *draft_for_select.borrow_mut() = definition.steps.clone();
+        if let Some(ui) = weak.upgrade() {
+            ui.set_macro_index(index);
+            ui.set_macro_name(definition.name.clone().into());
+            ui.set_macro_timing(match definition.timing { MacroTiming::Recorded => "Recorded delay", MacroTiming::Fixed => "Fixed delay" }.into());
+            ui.set_macro_delay(definition.fixed_delay_ms.to_string().into());
+            match definition.loop_mode {
+                MacroLoopMode::Once => { ui.set_macro_loop("Once".into()); ui.set_macro_loop_count("1".into()); }
+                MacroLoopMode::UntilStop => ui.set_macro_loop("Until stop".into()),
+                MacroLoopMode::UntilAnyClick => ui.set_macro_loop("Until any click".into()),
+                MacroLoopMode::Count(count) => { ui.set_macro_loop("Loop count".into()); ui.set_macro_loop_count(count.to_string().into()); }
+            }
+            ui.set_macro_event_index(-1);
+            ui.set_macro_error("".into());
+            refresh_macro_events(&ui, &definition.steps);
+            ui.set_status_message(format!("Editing macro · {}", definition.name).into());
+        }
+    });
+
+    let draft_for_remove = macro_draft.clone();
+    let weak = ui.as_weak();
+    ui.on_remove_macro_event(move |index| {
+        if let Ok(index) = usize::try_from(index) {
+            let mut draft = draft_for_remove.borrow_mut();
+            if index < draft.len() { draft.remove(index); }
+            if let Some(ui) = weak.upgrade() {
+                refresh_macro_events(&ui, &draft);
+                ui.set_macro_event_index(-1);
+                ui.set_macro_error("".into());
+                ui.set_status_message("Event removed from the unsaved macro draft".into());
+            }
+        }
+    });
+
+    let draft_for_clear = macro_draft.clone();
+    let weak = ui.as_weak();
+    ui.on_clear_macro_events(move || {
+        draft_for_clear.borrow_mut().clear();
+        if let Some(ui) = weak.upgrade() {
+            refresh_macro_events(&ui, &draft_for_clear.borrow());
+            ui.set_macro_event_index(-1);
+            ui.set_macro_error("".into());
+            ui.set_status_message("Events cleared from the unsaved macro draft".into());
+        }
+    });
+
+    let macros_for_delete = macros.clone();
+    let draft_for_delete = macro_draft.clone();
+    let selected_for_delete = macro_selected_id.clone();
+    let weak = ui.as_weak();
+    ui.on_delete_macro(move |index| {
+        let result = usize::try_from(index).map_err(|_| "Select a saved macro first".to_owned()).and_then(|index| {
+            let mut library = macros_for_delete.borrow().clone();
+            if index >= library.macros.len() { return Err("The selected macro no longer exists".into()); }
+            let macro_id = library.macros[index].macro_id.clone();
+            let profiles = config::load_profiles()?;
+            if profiles.iter().any(|profile| profile.assignments.iter().any(|assignment| matches!(&assignment.action, KeyAction::MacroReference { macro_id: assigned } if assigned == &macro_id))) {
+                return Err("This macro is assigned in a profile. Remove those assignments before deleting it.".into());
+            }
+            library.macros.remove(index);
+            save_macro_library(&library)?;
+            *macros_for_delete.borrow_mut() = library;
+            *draft_for_delete.borrow_mut() = Vec::new();
+            *selected_for_delete.borrow_mut() = None;
+            Ok(())
+        });
+        if let Some(ui) = weak.upgrade() {
+            match result {
+                Ok(()) => {
+                    let library = macros_for_delete.borrow();
+                    refresh_macro_library(&ui, &library);
+                    refresh_macro_events(&ui, &draft_for_delete.borrow());
+                    ui.set_macro_name("".into()); ui.set_macro_index(-1); ui.set_macro_event_index(-1);
+                    ui.set_status_message("Macro deleted from the local library".into());
+                }
+                Err(error) => { ui.set_macro_error(error.clone().into()); ui.set_status_message(error.into()); }
+            }
+        }
+    });
+
+    let last_for_capture = last_macro_capture.clone();
+    let weak = ui.as_weak();
+    ui.on_macro_recording_changed(move |recording| {
+        *last_for_capture.borrow_mut() = None;
+        if let Some(ui) = weak.upgrade() {
+            if recording { ui.set_status_message("Recording focused-window key presses only · press Stop when finished".into()); }
+        }
+    });
+    let draft_for_capture = macro_draft.clone();
+    let last_for_capture = last_macro_capture.clone();
+    let weak = ui.as_weak();
+    ui.on_capture_macro_key(move |chord| {
+        let result = config::normalize_key_chord(chord.as_str());
+        if let Some(ui) = weak.upgrade() {
+            if !ui.get_macro_recording() || ui.get_active_section() != "Macros" { return; }
+            match result {
+                Ok(keys) => {
+                    let mut draft = draft_for_capture.borrow_mut();
+                    if draft.len() >= 64 { ui.set_macro_error("A macro can contain at most 64 events".into()); return; }
+                    if let Some(previous) = draft.last_mut() {
+                        previous.delay_ms = if ui.get_macro_timing() == "Fixed delay" {
+                            ui.get_macro_delay().parse::<u32>().unwrap_or(0).min(600_000)
+                        } else {
+                            last_for_capture.borrow().map(|last| last.elapsed().as_millis().min(600_000) as u32).unwrap_or(0)
+                        };
+                    }
+                    draft.push(MacroStep { delay_ms: 0, action: KeyAction::KeyChord { keys } });
+                    *last_for_capture.borrow_mut() = Some(Instant::now());
+                    refresh_macro_events(&ui, &draft);
+                    ui.set_macro_event_index((draft.len() as i32) - 1);
+                    ui.set_macro_error("".into());
+                    ui.set_status_message(format!("Captured event {} · not sent to the operating system", draft.len()).into());
+                }
+                Err(error) => ui.set_macro_error(error.into()),
             }
         }
     });
@@ -397,9 +558,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     let assign_macro_for_open = assign_macro_on_save.clone();
+    let selected_macro_for_open = macro_selected_id.clone();
+    let macro_draft_for_open = macro_draft.clone();
     let weak = ui.as_weak();
     ui.on_open_macro_editor(move || if let Some(ui) = weak.upgrade() {
         assign_macro_for_open.set(true);
+        *selected_macro_for_open.borrow_mut() = None;
+        macro_draft_for_open.borrow_mut().clear();
+        ui.set_macro_index(-1);
+        ui.set_macro_name("".into());
+        ui.set_macro_error("".into());
+        refresh_macro_events(&ui, &macro_draft_for_open.borrow());
         ui.set_active_section("Macros".into());
         ui.set_status_message("Create and save a macro, then assign it from the Macro action tab".into());
     });
@@ -457,20 +626,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     let assign_macro_for_save = assign_macro_on_save.clone();
     let profile_for_macro = profile.clone();
     let state_for_macro = state.clone();
+    let selected_for_save = macro_selected_id.clone();
     let weak = ui.as_weak();
-    ui.on_save_macro(move |mode, name, value| {
-        let draft = draft_for_save.borrow().clone();
-        let mut result = if draft.is_empty() {
-            create_macro(&mode, &name, &value, &macros_for_save.borrow())
-        } else {
-            create_macro_identity(&name, &macros_for_save.borrow()).map(|mut definition| { definition.steps = draft; definition })
-        };
-        if let Ok(definition) = result.as_ref() { if let Err(error) = definition.validate() { result = Err(error); } }
+    ui.on_save_macro(move |name, timing, delay, loop_mode, loop_count| {
+        let result = update_macro_draft(
+            &name,
+            selected_for_save.borrow().as_deref(),
+            &draft_for_save.borrow(),
+            timing.as_str(), delay.as_str(), loop_mode.as_str(), loop_count.as_str(),
+            &macros_for_save.borrow(),
+        );
         if let Some(ui) = weak.upgrade() {
-            match result.and_then(|macro_item| {
-                let mut candidate = macros_for_save.borrow().clone();
-                candidate.macros.push(macro_item.clone());
-                candidate.validate()?;
+            match result.and_then(|(candidate, macro_item)| {
                 save_macro_library(&candidate)?;
                 *macros_for_save.borrow_mut() = candidate;
                 let should_assign = assign_macro_for_save.replace(false);
@@ -484,16 +651,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 Ok((macro_item, should_assign))
             }) {
-                Ok((_macro_item, should_assign)) => {
-                    *draft_for_save.borrow_mut() = Vec::new();
-                    ui.set_macro_preview(macro_library_summary(&macros_for_save.borrow()).into());
+                Ok((macro_item, should_assign)) => {
+                    *selected_for_save.borrow_mut() = Some(macro_item.macro_id.clone());
+                    ui.set_macro_index(macros_for_save.borrow().macros.iter().position(|item| item.macro_id == macro_item.macro_id).unwrap_or(0) as i32);
+                    ui.set_macro_name(macro_item.name.clone().into());
+                    ui.set_macro_error("".into());
+                    refresh_macro_library(&ui, &macros_for_save.borrow());
+                    refresh_macro_events(&ui, &draft_for_save.borrow());
                     if should_assign {
                         ui.set_active_section("Keymaps".into());
                         set_assignment(&ui, &profile_for_macro.borrow(), &state_for_macro.borrow(), &macros_for_save.borrow());
                         ui.set_status_message("Macro saved locally and assigned · host action not executed".into());
                     } else { ui.set_status_message("Macro saved locally · no host action executed".into()); }
                 }
-                Err(error) => { ui.set_macro_preview(format!("Could not save macro: {error}").into()); ui.set_status_message(error.into()); }
+                Err(error) => { ui.set_macro_error(error.clone().into()); ui.set_status_message(error.into()); }
             }
         }
     });
@@ -566,6 +737,7 @@ fn port_choices(ports: &[slint::SharedString]) -> Vec<slint::SharedString> {
     if ports.is_empty() { vec!["No serial ports found".into()] } else { ports.to_vec() }
 }
 
+#[cfg(test)]
 fn create_macro(mode: &str, name: &str, value: &str, library: &MacroLibrary) -> Result<MacroDefinition, String> {
     let step = macro_step_from_input(mode, value, "0")?;
     let mut definition = create_macro_identity(name, library)?;
@@ -583,7 +755,7 @@ fn create_macro_identity(name: &str, library: &MacroLibrary) -> Result<MacroDefi
     let mut macro_id = base_id.clone();
     let mut suffix = 2;
     while library.macros.iter().any(|item| item.macro_id == macro_id) { macro_id = format!("{base_id}-{suffix}"); suffix += 1; }
-    Ok(MacroDefinition { schema_version: 1, macro_id, name: name.to_owned(), steps: Vec::new() })
+    Ok(MacroDefinition { schema_version: 1, macro_id, name: name.to_owned(), steps: Vec::new(), timing: MacroTiming::Fixed, fixed_delay_ms: 0, loop_mode: MacroLoopMode::Once })
 }
 
 fn macro_step_from_input(mode: &str, value: &str, delay: &str) -> Result<MacroStep, String> {
@@ -602,13 +774,65 @@ fn macro_step_from_input(mode: &str, value: &str, delay: &str) -> Result<MacroSt
         _ => return Err("Choose one of the supported macro modes.".into()),
     };
     let step = MacroStep { delay_ms, action };
-    MacroDefinition { schema_version: 1, macro_id: "draft".into(), name: "Draft".into(), steps: vec![step.clone()] }.validate()?;
+    MacroDefinition { schema_version: 1, macro_id: "draft".into(), name: "Draft".into(), steps: vec![step.clone()], timing: MacroTiming::Fixed, fixed_delay_ms: 0, loop_mode: MacroLoopMode::Once }.validate()?;
     Ok(step)
+}
+
+fn update_macro_draft(
+    name: &str,
+    selected_id: Option<&str>,
+    steps: &[MacroStep],
+    timing: &str,
+    delay: &str,
+    loop_mode: &str,
+    loop_count: &str,
+    library: &MacroLibrary,
+) -> Result<(MacroLibrary, MacroDefinition), String> {
+    if steps.is_empty() { return Err("Add at least one event before saving the macro".into()); }
+    let timing = match timing { "Recorded delay" => MacroTiming::Recorded, "Fixed delay" => MacroTiming::Fixed, _ => return Err("Choose recorded or fixed delay".into()) };
+    let fixed_delay_ms = delay.trim().parse::<u32>().map_err(|_| "Delay must be a whole number of milliseconds".to_owned())?;
+    let loop_mode = match loop_mode {
+        "Once" => MacroLoopMode::Once,
+        "Until stop" => MacroLoopMode::UntilStop,
+        "Until any click" => MacroLoopMode::UntilAnyClick,
+        "Loop count" => MacroLoopMode::Count(loop_count.trim().parse::<u16>().map_err(|_| "Loop count must be a whole number from 1 to 10,000".to_owned())?),
+        _ => return Err("Choose a supported loop setting".into()),
+    };
+    let mut candidate = library.clone();
+    let mut definition = if let Some(id) = selected_id {
+        let position = candidate.macros.iter().position(|item| item.macro_id == id).ok_or_else(|| "The selected macro no longer exists".to_owned())?;
+        let existing = candidate.macros.remove(position);
+        if candidate.macros.iter().any(|item| item.name.eq_ignore_ascii_case(name.trim())) { return Err("A macro with that name already exists".into()); }
+        existing
+    } else {
+        create_macro_identity(name, &candidate)?
+    };
+    definition.name = name.trim().to_owned();
+    definition.steps = steps.to_vec();
+    definition.timing = timing;
+    definition.fixed_delay_ms = fixed_delay_ms;
+    definition.loop_mode = loop_mode;
+    definition.validate()?;
+    candidate.macros.push(definition.clone());
+    candidate.validate()?;
+    Ok((candidate, definition))
 }
 
 fn macro_library_summary(library: &MacroLibrary) -> String {
     if library.macros.is_empty() { return "No saved macros".into(); }
     library.macros.iter().map(|item| format!("{}  ·  {} step(s)  ·  {}", item.name, item.steps.len(), item.macro_id)).collect::<Vec<_>>().join("\n")
+}
+
+fn refresh_macro_library(ui: &MainWindow, library: &MacroLibrary) {
+    ui.set_macro_options(model_rc(library.macros.iter().map(|item| format!("{} · {} step(s) · {} · {}", item.name, item.steps.len(), display_action(&item.steps[0].action), item.macro_id).into()).collect()));
+    ui.set_macro_names(model_rc(library.macros.iter().map(|item| item.name.clone().into()).collect()));
+    ui.set_macro_preview(macro_library_summary(library).into());
+}
+
+fn refresh_macro_events(ui: &MainWindow, steps: &[MacroStep]) {
+    let rows = steps.iter().map(|step| format!("{} · {} ms", display_action(&step.action), step.delay_ms)).collect::<Vec<_>>();
+    ui.set_macro_events(model_rc(rows.into_iter().map(Into::into).collect()));
+    ui.set_macro_preview(if steps.is_empty() { "No events recorded".into() } else { format!("{} event(s) · locally saved draft", steps.len()) }.into());
 }
 
 fn model_rc(values: Vec<slint::SharedString>) -> slint::ModelRc<slint::SharedString> {
@@ -649,6 +873,24 @@ mod tests {
         profile.validate().unwrap();
         assert_eq!(display_action_with_library(profile.action("key-3-1", 1), &populated), "Macro · Open search");
         assert_eq!(create_macro_identity("Open search", &populated).unwrap_err(), "A macro with that name already exists.");
+    }
+    #[test] fn macro_editor_persists_recorded_timing_loops_and_edits_by_stable_id() {
+        let library = MacroLibrary::default();
+        let steps = vec![
+            MacroStep { delay_ms: 84, action: KeyAction::KeyChord { keys: vec!["CTRL".into(), "P".into()] } },
+            MacroStep { delay_ms: 0, action: KeyAction::MouseAction { action: MouseActionKind::LeftClick } },
+        ];
+        let (created_library, created) = update_macro_draft("Search", None, &steps, "Recorded delay", "1", "Loop count", "3", &library).unwrap();
+        assert_eq!(created.timing, MacroTiming::Recorded);
+        assert_eq!(created.loop_mode, MacroLoopMode::Count(3));
+        assert_eq!(created.steps[0].delay_ms, 84);
+        let edited_steps = vec![MacroStep { delay_ms: 0, action: KeyAction::KeyChord { keys: vec!["ESC".into()] } }];
+        let (edited_library, edited) = update_macro_draft("Search updated", Some(&created.macro_id), &edited_steps, "Fixed delay", "50", "Until stop", "1", &created_library).unwrap();
+        assert_eq!(edited.macro_id, created.macro_id);
+        assert_eq!(edited.loop_mode, MacroLoopMode::UntilStop);
+        assert_eq!(edited.fixed_delay_ms, 50);
+        assert_eq!(edited_library.macros.len(), 1);
+        assert_eq!(update_macro_draft("Bad", None, &steps, "Fixed delay", "1", "Loop count", "0", &library).unwrap_err(), "Loop count must be between 1 and 10,000");
     }
     #[test] fn application_location_preserves_path_or_identifier_as_typed_data() {
         assert_eq!(application_location(r"C:\Apps\editor.exe"), (Some(r"C:\Apps\editor.exe".into()), None));
