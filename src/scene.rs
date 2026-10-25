@@ -13,7 +13,7 @@ impl Default for Camera {
         Self {
             yaw: -0.25,
             pitch: 1.08,
-            zoom: 1.34,
+            zoom: 1.0,
         }
     }
 }
@@ -133,8 +133,32 @@ pub fn render(width: usize, height: usize, camera: Camera) -> SceneFrame {
     paint_background(&mut rgba, width, height);
 
     let shell = cad_shell();
-    let focal = height as f32 * 1.20 * camera.zoom.clamp(0.72, 1.65);
-    let screen_center = (width as f32 * 0.51, height as f32 * 0.51);
+    let projected_bounds = shell
+        .triangles
+        .iter()
+        .flat_map(|triangle| triangle.points)
+        .filter_map(|point| project(point, camera, 1.0, (0.0, 0.0)))
+        .fold(
+            (f32::INFINITY, f32::NEG_INFINITY, f32::INFINITY, f32::NEG_INFINITY),
+            |(min_x, max_x, min_y, max_y), point| {
+                (
+                    min_x.min(point.x),
+                    max_x.max(point.x),
+                    min_y.min(point.y),
+                    max_y.max(point.y),
+                )
+            },
+        );
+    let (min_x, max_x, min_y, max_y) = projected_bounds;
+    let bounds_width = (max_x - min_x).max(0.001);
+    let bounds_height = (max_y - min_y).max(0.001);
+    let fit_scale = (width as f32 * 0.84 / bounds_width)
+        .min(height as f32 * 0.84 / bounds_height);
+    let focal = fit_scale * camera.zoom.clamp(0.72, 1.1);
+    let screen_center = (
+        width as f32 * 0.5 - (min_x + max_x) * focal * 0.5,
+        height as f32 * 0.5 - (min_y + max_y) * focal * 0.5,
+    );
 
     for triangle in &shell.triangles {
         let Some(a) = project(triangle.points[0], camera, focal, screen_center) else {

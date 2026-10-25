@@ -8,10 +8,10 @@ mod scene;
 
 use app_state::SelectionState;
 use clap::{Parser, Subcommand};
-use config::{load_or_create_default, load_macro_library, save_macro_library, save_profile, KeyAction, MacroDefinition, MacroLibrary, MacroLoopMode, MacroStep, MacroTiming, MouseActionKind, Profile};
+use config::{load_macro_library, save_macro_library, save_profile, KeyAction, LayerConfig, MacroDefinition, MacroLibrary, MacroLoopMode, MacroStep, MacroTiming, MouseActionKind, Profile};
 use scene::Camera;
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode};
-use std::{cell::{Cell, RefCell}, error::Error, rc::Rc, time::{Duration, Instant}};
+use std::{cell::{Cell, RefCell}, error::Error, fs, rc::Rc, time::{Duration, Instant}};
 
 const SCENE_WIDTH: usize = 840;
 const SCENE_HEIGHT: usize = 540;
@@ -235,7 +235,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     if let Some(command) = cli.command { run_cli(command); return Ok(()); }
     board::validate_definition(board::BOARD_JSON).expect("embedded board definition must match the physical layout");
 
-    let profile = load_or_create_default().unwrap_or_else(|error| {
+    let profile = config::load_active_profile().unwrap_or_else(|error| {
         eprintln!("Could not load profile: {error}"); Profile::default_profile()
     });
     let profile = Rc::new(RefCell::new(profile));
@@ -249,7 +249,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let scene_cache = Rc::new(RefCell::new(None));
     let ui = MainWindow::new()?;
     ui.set_profile_name(profile.borrow().name.clone().into());
-    ui.set_raw_config(serde_json::to_string_pretty(&*profile.borrow())?.into());
+    set_studio_source(&ui, studio_source(&profile.borrow(), 1));
+    ui.set_selected_config_label("layer-1.json".into());
+    let config_targets: Rc<RefCell<Vec<(String, u8)>>> = Rc::new(RefCell::new(Vec::new()));
+    let selected_config_layer = Rc::new(Cell::new(1u8));
+    let profiles = config::load_profiles().unwrap_or_else(|_| vec![profile.borrow().clone()]);
+    refresh_config_tree(&ui, &profiles, &config_targets);
+    refresh_profile_picker(&ui, &profiles, &profile.borrow().profile_id);
+    if let Some(index) = config_targets.borrow().iter().position(|(id, layer)| id == &profile.borrow().profile_id && *layer == 1) { ui.set_selected_config_file(index as i32); }
     ui.set_status_message("Local profile · hardware not connected".into());
     ui.set_macro_preview(macro_library_summary(&macros.borrow()).into());
     refresh_macro_library(&ui, &macros.borrow());
@@ -490,6 +497,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
+    let selected_layer_for_action_save = selected_config_layer.clone();
     let macros_for_save = macros.clone();
     let draft_for_save = macro_draft.clone();
     let weak = ui.as_weak();
@@ -527,6 +535,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             match result {
                 Ok(()) => {
                     let profile = profile_for_save.borrow();
+                    set_studio_source(&ui, studio_source(&profile, selected_layer_for_action_save.get()));
                     set_assignment(&ui, &profile, &current, &macros_for_save.borrow());
                     update_hover_overlay(&ui, &profile, &current, scene_for_save.borrow().as_ref());
                     ui.set_status_message("Saved to the active profile".into());
@@ -623,6 +632,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     let macros_for_save = macros.clone();
+    let selected_layer_for_macro_save = selected_config_layer.clone();
     let assign_macro_for_save = assign_macro_on_save.clone();
     let profile_for_macro = profile.clone();
     let state_for_macro = state.clone();
@@ -659,6 +669,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     refresh_macro_library(&ui, &macros_for_save.borrow());
                     refresh_macro_events(&ui, &draft_for_save.borrow());
                     if should_assign {
+                        set_studio_source(&ui, studio_source(&profile_for_macro.borrow(), selected_layer_for_macro_save.get()));
                         ui.set_active_section("Keymaps".into());
                         set_assignment(&ui, &profile_for_macro.borrow(), &state_for_macro.borrow(), &macros_for_save.borrow());
                         ui.set_status_message("Macro saved locally and assigned · host action not executed".into());
@@ -669,17 +680,23 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
+    let selected_layer_for_rename = selected_config_layer.clone();
     let profile_for_name = profile.clone();
     let weak = ui.as_weak();
     ui.on_rename_profile(move |name| {
         let mut candidate = profile_for_name.borrow().clone(); candidate.name = name.trim().to_owned();
         let result = candidate.validate().and_then(|()| save_profile(&candidate)).map(|()| candidate);
         if let Some(ui) = weak.upgrade() { match result {
-            Ok(candidate) => { *profile_for_name.borrow_mut() = candidate.clone(); ui.set_profile_name(candidate.name.into()); ui.set_status_message("Profile name saved".into()); }
+            Ok(candidate) => { *profile_for_name.borrow_mut() = candidate.clone(); ui.set_profile_name(candidate.name.clone().into()); set_studio_source(&ui, studio_source(&candidate, selected_layer_for_rename.get())); ui.set_status_message("Profile name saved".into()); }
             Err(error) => ui.set_status_message(error.into()),
         }}
     });
     let profile_for_create = profile.clone();
+    let state_for_create = state.clone();
+    let macros_for_create = macros.clone();
+    let targets_for_create = config_targets.clone();
+    let layer_for_create = selected_config_layer.clone();
+    let scene_for_create = scene_cache.clone();
     let weak = ui.as_weak();
     ui.on_create_profile(move |name| {
         let name = name.trim().to_owned();
@@ -687,24 +704,179 @@ fn main() -> Result<(), Box<dyn Error>> {
         let result = if name.is_empty() || id.is_empty() { Err("Enter a profile name using letters and numbers.".into()) }
         else { config::load_profiles().and_then(|items| {
             if items.iter().any(|item| item.profile_id == id) { return Err("A profile with that name already exists.".into()); }
-            let mut candidate = Profile::default_profile(); candidate.profile_id = id; candidate.name = name; save_profile(&candidate)?; Ok(candidate)
+            let mut candidate = Profile::default_profile(); candidate.profile_id = id; candidate.name = name; save_profile(&candidate)?; config::save_active_profile(&candidate.profile_id)?; Ok(candidate)
         }) };
         if let Some(ui) = weak.upgrade() { match result {
-            Ok(candidate) => { *profile_for_create.borrow_mut() = candidate.clone(); ui.set_profile_name(candidate.name.clone().into()); ui.set_raw_config(serde_json::to_string_pretty(&candidate).unwrap_or_default().into()); ui.set_status_message("New profile created".into()); }
+            Ok(candidate) => {
+                state_for_create.borrow_mut().set_layer(1);
+                activate_profile(&ui, &profile_for_create, candidate, &state_for_create, &macros_for_create, &targets_for_create, &layer_for_create, &scene_for_create);
+                ui.set_new_profile_name("".into());
+                ui.set_profile_delete_confirm(false);
+                ui.set_profiles_popup_open(false);
+                ui.set_status_message("New profile created".into());
+            }
             Err(error) => ui.set_status_message(error.into()),
         }}
     });
+    let weak = ui.as_weak();
+    let profile_for_refresh = profile.clone();
+    ui.on_refresh_profiles(move || {
+        if let Some(ui) = weak.upgrade() {
+            match config::load_profiles() {
+                Ok(profiles) => refresh_profile_picker(&ui, &profiles, &profile_for_refresh.borrow().profile_id),
+                Err(error) => ui.set_status_message(error.into()),
+            }
+        }
+    });
+    let profile_for_switch = profile.clone();
+    let state_for_switch = state.clone();
+    let macros_for_switch = macros.clone();
+    let targets_for_switch = config_targets.clone();
+    let layer_for_switch = selected_config_layer.clone();
+    let scene_for_switch = scene_cache.clone();
+    let weak = ui.as_weak();
+    ui.on_switch_profile(move |profile_id| {
+        let profile_id = profile_id.to_string();
+        let result = config::load_profiles().and_then(|profiles| profiles.into_iter().find(|item| item.profile_id == profile_id).ok_or_else(|| "Profile no longer exists".to_owned()))
+            .and_then(|candidate| config::save_active_profile(&candidate.profile_id).map(|()| candidate));
+        if let Some(ui) = weak.upgrade() {
+            match result {
+                Ok(candidate) => {
+                    activate_profile(&ui, &profile_for_switch, candidate, &state_for_switch, &macros_for_switch, &targets_for_switch, &layer_for_switch, &scene_for_switch);
+                    ui.set_profiles_popup_open(false);
+                    ui.set_profile_delete_confirm(false);
+                    ui.set_status_message("Active profile switched".into());
+                }
+                Err(error) => ui.set_status_message(error.into()),
+            }
+        }
+    });
+    let profile_for_delete = profile.clone();
+    let state_for_delete = state.clone();
+    let macros_for_delete = macros.clone();
+    let targets_for_delete = config_targets.clone();
+    let layer_for_delete = selected_config_layer.clone();
+    let scene_for_delete = scene_cache.clone();
+    let weak = ui.as_weak();
+    ui.on_delete_profile(move |profile_id| {
+        let profile_id = profile_id.to_string();
+        let result = config::archive_profile(&profile_id).and_then(|()| config::load_profiles());
+        if let Some(ui) = weak.upgrade() {
+            match result {
+                Ok(profiles) => {
+                    if profiles.is_empty() {
+                        ui.set_status_message("At least one profile must remain".into());
+                        return;
+                    }
+                    let active_id = profile_for_delete.borrow().profile_id.clone();
+                    if active_id == profile_id {
+                        let fallback = profiles[0].clone();
+                        let marker_result = config::save_active_profile(&fallback.profile_id);
+                        activate_profile(&ui, &profile_for_delete, fallback, &state_for_delete, &macros_for_delete, &targets_for_delete, &layer_for_delete, &scene_for_delete);
+                        if let Err(error) = marker_result { ui.set_status_message(error.into()); }
+                    } else {
+                        refresh_config_tree(&ui, &profiles, &targets_for_delete);
+                        refresh_profile_picker(&ui, &profiles, &active_id);
+                    }
+                    ui.set_profiles_popup_open(false);
+                    ui.set_profile_delete_confirm(false);
+                    ui.set_status_message("Profile archived · its files are recoverable".into());
+                }
+                Err(error) => ui.set_status_message(error.into()),
+            }
+        }
+    });
+    let config_targets_for_raw = config_targets.clone();
+    let selected_layer_for_raw = selected_config_layer.clone();
     let profile_for_raw = profile.clone();
     let state_for_raw = state.clone();
     let macros_for_raw = macros.clone();
     let weak = ui.as_weak();
     ui.on_save_raw_config(move |source| {
-        let result = serde_json::from_str::<Profile>(&source).map_err(|error| format!("Invalid JSON: {error}"))
-            .and_then(|candidate| { candidate.validate()?; save_profile(&candidate)?; Ok(candidate) });
+        let layer = selected_layer_for_raw.get();
+        let result = if layer == 0 {
+            serde_json::from_str::<Profile>(&source).map_err(|error| format!("Invalid profile JSON: {error}"))
+                .and_then(|candidate| { candidate.validate()?; if candidate.profile_id != profile_for_raw.borrow().profile_id { return Err("Profile ID cannot be changed in Config Studio".into()); } save_profile(&candidate)?; Ok(candidate) })
+        } else {
+            serde_json::from_str::<LayerConfig>(&source).map_err(|error| format!("Invalid layer JSON: {error}"))
+                .and_then(|layer_config| layer_config.apply_to(&profile_for_raw.borrow()).and_then(|candidate| { if layer_config.layer != layer { return Err("Selected file and layer number do not match".into()); } save_profile(&candidate)?; Ok(candidate) }))
+        };
         if let Some(ui) = weak.upgrade() { match result {
-            Ok(candidate) => { *profile_for_raw.borrow_mut() = candidate.clone(); ui.set_profile_name(candidate.name.clone().into()); ui.set_raw_config(serde_json::to_string_pretty(&candidate).unwrap_or_default().into()); set_assignment(&ui, &candidate, &state_for_raw.borrow(), &macros_for_raw.borrow()); ui.set_status_message("Configuration validated and saved".into()); }
+            Ok(candidate) => { *profile_for_raw.borrow_mut() = candidate.clone(); ui.set_profile_name(candidate.name.clone().into()); set_studio_source(&ui, studio_source(&candidate, layer)); set_assignment(&ui, &candidate, &state_for_raw.borrow(), &macros_for_raw.borrow()); ui.set_status_message(if layer == 0 { "Profile config validated and saved".into() } else { format!("Layer {layer} validated and saved").into() }); refresh_config_tree(&ui, &config::load_profiles().unwrap_or_else(|_| vec![candidate]), &config_targets_for_raw); }
             Err(error) => ui.set_status_message(error.into()),
         }}
+    });
+
+    let weak = ui.as_weak();
+    ui.on_config_source_edited(move |source| if let Some(ui) = weak.upgrade() { ui.set_config_highlight(highlight_json(&source)); });
+
+    let profile_for_select = profile.clone();
+    let state_for_select = state.clone();
+    let macros_for_select = macros.clone();
+    let targets_for_select = config_targets.clone();
+    let selected_layer_for_select = selected_config_layer.clone();
+    let weak = ui.as_weak();
+    ui.on_select_config_file(move |index| {
+        let target = targets_for_select.borrow().get(index as usize).cloned();
+        if let Some((profile_id, layer)) = target {
+            if layer == u8::MAX { return; }
+            let result = config::load_profiles().and_then(|profiles| profiles.into_iter().find(|item| item.profile_id == profile_id).ok_or_else(|| "Profile no longer exists".to_owned()));
+            if let Some(ui) = weak.upgrade() {
+                match result {
+                    Ok(candidate) => {
+                        *profile_for_select.borrow_mut() = candidate.clone();
+                        selected_layer_for_select.set(layer);
+                        if layer > 0 { state_for_select.borrow_mut().set_layer(layer); }
+                        ui.set_selected_config_file(index);
+                        ui.set_selected_config_label(if layer == 0 { "profile.json".into() } else { format!("layer-{layer}.json").into() });
+                        if layer > 0 { ui.set_active_layer(layer as i32); }
+                        ui.set_profile_name(candidate.name.clone().into());
+                        set_studio_source(&ui, studio_source(&candidate, layer));
+                        set_assignment(&ui, &candidate, &state_for_select.borrow(), &macros_for_select.borrow());
+                        ui.set_status_message(format!("Editing {} · layer {layer}", candidate.profile_id).into());
+                    }
+                    Err(error) => ui.set_status_message(error.into()),
+                }
+            }
+        }
+    });
+
+    let profile_for_file_import = profile.clone();
+    let targets_for_file_import = config_targets.clone();
+    let weak = ui.as_weak();
+    ui.on_import_config_file(move || {
+        let picked = rfd::FileDialog::new().add_filter("Kohlrausch JSON config", &["json"]).pick_file();
+        if let Some(path) = picked {
+            let result = fs::read_to_string(&path).map_err(|error| format!("Cannot read {}: {error}", path.display())).and_then(|source| {
+                if let Ok(layer) = serde_json::from_str::<LayerConfig>(&source) {
+                    let candidate = layer.apply_to(&profile_for_file_import.borrow())?;
+                    save_profile(&candidate)?;
+                    Ok(candidate)
+                } else {
+                    let candidate = config::load_external_profile_file(&path)?;
+                    save_profile(&candidate)?;
+                    Ok(candidate)
+                }
+            });
+            if let Some(ui) = weak.upgrade() { match result {
+                Ok(candidate) => { *profile_for_file_import.borrow_mut() = candidate.clone(); ui.set_profile_name(candidate.name.clone().into()); ui.set_selected_config_label("layer-1.json".into()); set_studio_source(&ui, studio_source(&candidate, 1)); ui.set_status_message(format!("Imported profile {}", candidate.profile_id).into()); refresh_config_tree(&ui, &config::load_profiles().unwrap_or_else(|_| vec![candidate]), &targets_for_file_import); }
+                Err(error) => ui.set_status_message(format!("Import failed: {error}").into()),
+            }}
+        }
+    });
+
+    let profile_for_folder_import = profile.clone();
+    let targets_for_folder_import = config_targets.clone();
+    let weak = ui.as_weak();
+    ui.on_import_config_folder(move || {
+        let picked = rfd::FileDialog::new().pick_folder();
+        if let Some(path) = picked {
+            let result = config::load_profile_folder(&path).and_then(|candidate| { candidate.validate()?; save_profile(&candidate)?; Ok(candidate) });
+            if let Some(ui) = weak.upgrade() { match result {
+                Ok(candidate) => { *profile_for_folder_import.borrow_mut() = candidate.clone(); ui.set_profile_name(candidate.name.clone().into()); ui.set_selected_config_label("layer-1.json".into()); set_studio_source(&ui, studio_source(&candidate, 1)); ui.set_status_message(format!("Imported profile {}", candidate.profile_id).into()); refresh_config_tree(&ui, &config::load_profiles().unwrap_or_else(|_| vec![candidate]), &targets_for_folder_import); }
+                Err(error) => ui.set_status_message(format!("Import failed: {error}").into()),
+            }}
+        }
     });
 
     if cli.config { ui.set_active_section("Config Studio".into()); }
@@ -837,6 +1009,103 @@ fn refresh_macro_events(ui: &MainWindow, steps: &[MacroStep]) {
 
 fn model_rc(values: Vec<slint::SharedString>) -> slint::ModelRc<slint::SharedString> {
     Rc::new(slint::VecModel::from(values)).into()
+}
+
+fn refresh_profile_picker(ui: &MainWindow, profiles: &[Profile], active_id: &str) {
+    let labels = profiles.iter().map(|profile| {
+        let active = if profile.profile_id == active_id { "  ·  ACTIVE" } else { "" };
+        format!("{}  ·  {}{}", profile.name, profile.profile_id, active).into()
+    }).collect();
+    let ids = profiles.iter().map(|profile| profile.profile_id.clone().into()).collect();
+    let selected = profiles.iter().position(|profile| profile.profile_id == active_id).map_or(-1, |index| index as i32);
+    ui.set_profile_labels(model_rc(labels));
+    ui.set_profile_ids(model_rc(ids));
+    ui.set_profile_selected_index(selected);
+}
+
+fn activate_profile(
+    ui: &MainWindow,
+    profile_store: &Rc<RefCell<Profile>>,
+    candidate: Profile,
+    state: &Rc<RefCell<SelectionState>>,
+    macros: &Rc<RefCell<MacroLibrary>>,
+    config_targets: &Rc<RefCell<Vec<(String, u8)>>>,
+    selected_config_layer: &Rc<Cell<u8>>,
+    scene_cache: &Rc<RefCell<Option<scene::SceneFrame>>>,
+) {
+    let layer = state.borrow().active_layer;
+    *profile_store.borrow_mut() = candidate.clone();
+    selected_config_layer.set(layer);
+    ui.set_profile_name(candidate.name.clone().into());
+    ui.set_selected_config_label(format!("layer-{layer}.json").into());
+    ui.set_active_layer(layer as i32);
+    set_studio_source(ui, studio_source(&candidate, layer));
+    let profiles = config::load_profiles().unwrap_or_else(|_| vec![candidate.clone()]);
+    refresh_config_tree(ui, &profiles, config_targets);
+    if let Some(index) = config_targets.borrow().iter().position(|(id, file_layer)| id == &candidate.profile_id && *file_layer == layer) {
+        ui.set_selected_config_file(index as i32);
+    }
+    refresh_profile_picker(ui, &profiles, &candidate.profile_id);
+    set_assignment(ui, &candidate, &state.borrow(), &macros.borrow());
+    update_selection_marker(ui, &state.borrow(), scene_cache.borrow().as_ref());
+    update_hover_overlay(ui, &candidate, &state.borrow(), scene_cache.borrow().as_ref());
+}
+
+fn refresh_config_tree(ui: &MainWindow, profiles: &[Profile], targets: &Rc<RefCell<Vec<(String, u8)>>>) {
+    let mut labels = Vec::new();
+    let mut kinds = Vec::new();
+    let mut entries = Vec::new();
+    for profile in profiles {
+        labels.push(profile.profile_id.clone().into());
+        kinds.push(0);
+        entries.push((profile.profile_id.clone(), u8::MAX));
+        labels.push("    profile.json".into());
+        kinds.push(1);
+        entries.push((profile.profile_id.clone(), 0));
+        for layer in 1..=4 {
+            labels.push(format!("layer-{layer}.json").into());
+            kinds.push(2);
+            entries.push((profile.profile_id.clone(), layer));
+        }
+    }
+    *targets.borrow_mut() = entries;
+    ui.set_config_files(model_rc(labels));
+    ui.set_config_file_kinds(model_rc_int(kinds));
+}
+
+fn model_rc_int(values: Vec<i32>) -> slint::ModelRc<i32> {
+    Rc::new(slint::VecModel::from(values)).into()
+}
+
+fn set_studio_source(ui: &MainWindow, source: String) {
+    ui.set_raw_config(source.clone().into());
+    ui.set_config_highlight(highlight_json(&source));
+}
+
+fn studio_source(profile: &Profile, layer: u8) -> String {
+    if layer == 0 { serde_json::to_string_pretty(profile).unwrap_or_default() }
+    else { serde_json::to_string_pretty(&LayerConfig::from_profile(profile, layer).unwrap()).unwrap_or_default() }
+}
+
+fn highlight_json(source: &str) -> slint::StyledText {
+    let markdown = source.lines().map(|line| {
+        let escape = |part: &str| part.chars().map(|character| match character {
+            '&' => "&amp;".to_owned(), '<' => "&lt;".to_owned(), '>' => "&gt;".to_owned(),
+            '*' | '_' | '[' | ']' | '`' | '#' | '|' => format!("\\{character}"),
+            _ => character.to_string(),
+        }).collect::<String>();
+        if let Some(colon) = line.find(':') {
+            let value = line[colon + 1..].trim_start();
+            let value_color = if value.starts_with('"') { "#a8d98b" }
+                else if value.starts_with(|c: char| c.is_ascii_digit() || c == '-') { "#f0b36b" }
+                else { "#c4a7e7" };
+            let spacing = " ".repeat(line[colon + 1..].len() - value.len());
+            format!("<font color='#83d7e8'>{}</font><font color='#a9a19e'>:{}</font><font color='{value_color}'>{}</font>  ", escape(&line[..colon]), escape(&spacing), escape(value))
+        } else {
+            format!("<font color='#a9a19e'>{}</font>  ", escape(line))
+        }
+    }).collect::<Vec<_>>().join("\n");
+    slint::StyledText::from_markdown(&markdown).unwrap_or_else(|_| slint::StyledText::from_plain_text(source))
 }
 
 #[cfg(test)]

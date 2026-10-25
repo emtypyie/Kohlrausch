@@ -42,6 +42,37 @@ pub struct Profile {
     pub assignments: Vec<Assignment>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LayerConfig {
+    pub schema_version: u8,
+    pub profile_id: String,
+    pub layer: u8,
+    pub assignments: Vec<LayerAssignment>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LayerAssignment { pub key_id: String, pub action: KeyAction }
+
+impl LayerConfig {
+    pub fn from_profile(profile: &Profile, layer: u8) -> Result<Self, String> {
+        if !(1..=4).contains(&layer) { return Err("Layer must be between 1 and 4".into()); }
+        Ok(Self { schema_version: 1, profile_id: profile.profile_id.clone(), layer, assignments: profile.assignments.iter().filter(|item| item.layer == layer).map(|item| LayerAssignment { key_id: item.key_id.clone(), action: item.action.clone() }).collect() })
+    }
+
+    pub fn apply_to(&self, profile: &Profile) -> Result<Profile, String> {
+        if self.schema_version != 1 || self.profile_id != profile.profile_id || !(1..=4).contains(&self.layer) || self.assignments.len() != 9 { return Err("Layer file does not match this profile or has an invalid schema".into()); }
+        let mut candidate = profile.clone();
+        candidate.assignments.retain(|item| item.layer != self.layer);
+        for item in &self.assignments {
+            candidate.assignments.push(Assignment { key_id: item.key_id.clone(), layer: self.layer, action: item.action.clone() });
+        }
+        candidate.validate()?;
+        Ok(candidate)
+    }
+}
+
 impl Profile {
     pub fn default_profile() -> Self {
         let assignments = (1..=4).flat_map(|layer| KEY_IDS.iter().map(move |key_id| Assignment {
@@ -259,11 +290,38 @@ pub fn load_or_create_default() -> Result<Profile, String> {
     fs::create_dir_all(&dir).map_err(|e| format!("Cannot create profile directory: {e}"))?;
     let path = dir.join("default.json");
     if path.exists() {
+        let layered = dir.join("default");
+        if layered.join("profile.json").is_file() { return load_profile_folder(&layered); }
         return load_profile_file(&path);
     }
     let profile = Profile::default_profile();
     save_profile(&profile)?;
     Ok(profile)
+}
+
+pub fn load_active_profile() -> Result<Profile, String> {
+    let dir = profiles_dir();
+    let marker = dir.parent().unwrap_or_else(|| std::path::Path::new(".")).join("active-profile");
+    if marker.is_file() {
+        if let Ok(profile_id) = fs::read_to_string(&marker) {
+            let profile_id = profile_id.trim();
+            if valid_stable_id(profile_id) {
+                if let Some(profile) = load_profiles()?.into_iter().find(|profile| profile.profile_id == profile_id) {
+                    return Ok(profile);
+                }
+            }
+        }
+    }
+    load_or_create_default()
+}
+
+pub fn save_active_profile(profile_id: &str) -> Result<(), String> {
+    if !valid_stable_id(profile_id) { return Err("Invalid profile ID".into()); }
+    if !load_profiles()?.iter().any(|profile| profile.profile_id == profile_id) {
+        return Err("Profile no longer exists".into());
+    }
+    let dir = profiles_dir().parent().unwrap_or_else(|| std::path::Path::new(".")).to_path_buf();
+    save_json_atomic(&dir.join("active-profile"), &dir, profile_id)
 }
 
 #[derive(Deserialize)]
@@ -320,21 +378,104 @@ fn load_profile_file(path: &std::path::Path) -> Result<Profile, String> {
     Ok(profile)
 }
 
+pub fn load_external_profile_file(path: &std::path::Path) -> Result<Profile, String> { load_profile_file(path) }
+
+pub fn load_profile_folder(path: &std::path::Path) -> Result<Profile, String> {
+    let manifest = path.join("profile.json");
+    let profile_path = if manifest.is_file() { manifest } else {
+        let mut files = fs::read_dir(path).map_err(|error| format!("Cannot read config folder: {error}"))?
+            .filter_map(Result::ok).map(|entry| entry.path())
+            .filter(|entry| entry.extension().is_some_and(|extension| extension == "json"))
+            .collect::<Vec<_>>();
+        files.sort();
+        files.into_iter().find(|entry| entry.file_stem().is_some_and(|name| name == "profile")).ok_or_else(|| "Folder must contain profile.json".to_owned())?
+    };
+    let mut profile = load_profile_file(&profile_path)?;
+    for layer in 1..=4 {
+        let layer_path = path.join(format!("layer-{layer}.json"));
+        if layer_path.is_file() {
+            let data = fs::read_to_string(&layer_path).map_err(|error| format!("Cannot read {}: {error}", layer_path.display()))?;
+            let layer: LayerConfig = serde_json::from_str(&data).map_err(|error| format!("Invalid layer file {}: {error}", layer_path.display()))?;
+            profile = layer.apply_to(&profile)?;
+        }
+    }
+    profile.validate()?;
+    Ok(profile)
+}
+
 pub fn load_profiles() -> Result<Vec<Profile>, String> {
     let dir = profiles_dir();
     fs::create_dir_all(&dir).map_err(|e| format!("Cannot create profile directory: {e}"))?;
     let mut profiles = Vec::new();
-    for entry in fs::read_dir(&dir).map_err(|e| format!("Cannot read profile directory: {e}"))? {
-        let entry = entry.map_err(|e| format!("Cannot read profile entry: {e}"))?;
-        let path = entry.path();
+    let mut seen = HashSet::new();
+    let entries = fs::read_dir(&dir).map_err(|e| format!("Cannot read profile directory: {e}"))?
+        .map(|entry| entry.map(|entry| entry.path())).collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("Cannot read profile entry: {error}"))?;
+    for path in &entries {
+        if path.is_dir() {
+            let manifest = path.join("profile.json");
+            if manifest.is_file() {
+                let mut profile = load_profile_file(&manifest)?;
+                for layer in 1..=4 {
+                    let layer_path = path.join(format!("layer-{layer}.json"));
+                    if layer_path.is_file() {
+                        let data = fs::read_to_string(&layer_path).map_err(|error| format!("Cannot read {}: {error}", layer_path.display()))?;
+                        let layer_config: LayerConfig = serde_json::from_str(&data).map_err(|error| format!("Invalid layer file {}: {error}", layer_path.display()))?;
+                        profile = layer_config.apply_to(&profile)?;
+                    }
+                }
+                profile.validate()?;
+                seen.insert(profile.profile_id.clone());
+                profiles.push(profile);
+            }
+        }
+    }
+    for path in &entries {
         if path.extension().is_some_and(|extension| extension == "json") {
-            let profile = load_profile_file(&path).map_err(|error| format!("Invalid profile {}: {error}", path.display()))?;
-            profiles.push(profile);
+            let profile = load_profile_file(path).map_err(|error| format!("Invalid profile {}: {error}", path.display()))?;
+            if seen.insert(profile.profile_id.clone()) { profiles.push(profile); }
         }
     }
     if profiles.is_empty() { profiles.push(load_or_create_default()?); }
+    for profile in profiles.clone() {
+        if !dir.join(&profile.profile_id).join("profile.json").is_file() { save_profile(&profile)?; }
+    }
     profiles.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
     Ok(profiles)
+}
+
+pub fn archive_profile(profile_id: &str) -> Result<(), String> {
+    if !valid_stable_id(profile_id) { return Err("Invalid profile ID".into()); }
+    let profiles = load_profiles()?;
+    if profiles.len() <= 1 { return Err("Keep at least one profile".into()); }
+    if !profiles.iter().any(|profile| profile.profile_id == profile_id) {
+        return Err("Profile no longer exists".into());
+    }
+
+    let dir = profiles_dir();
+    let trash = dir.join(".trash");
+    fs::create_dir_all(&trash).map_err(|error| format!("Cannot create profile archive: {error}"))?;
+    let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+        .map_err(|error| format!("Cannot timestamp profile archive: {error}"))?.as_secs();
+    let archive = trash.join(format!("{profile_id}-{stamp}-{}", std::process::id()));
+    fs::create_dir(&archive).map_err(|error| format!("Cannot prepare profile archive: {error}"))?;
+
+    let sources = [
+        (dir.join(profile_id), archive.join(profile_id)),
+        (dir.join(format!("{profile_id}.json")), archive.join(format!("{profile_id}.json"))),
+        (dir.join(format!("{profile_id}.json.bak")), archive.join(format!("{profile_id}.json.bak"))),
+    ];
+    let mut moved = Vec::new();
+    for (source, destination) in sources {
+        if !source.exists() { continue; }
+        if let Err(error) = fs::rename(&source, &destination) {
+            for (original, archived) in moved.into_iter().rev() { let _ = fs::rename(archived, original); }
+            let _ = fs::remove_dir(&archive);
+            return Err(format!("Cannot archive profile files: {error}"));
+        }
+        moved.push((source, destination));
+    }
+    Ok(())
 }
 
 pub fn macro_library_path() -> PathBuf {
@@ -376,7 +517,17 @@ fn save_json_atomic(path: &std::path::Path, dir: &std::path::Path, text: &str) -
 pub fn save_profile(profile: &Profile) -> Result<(), String> {
     profile.validate()?;
     let dir = profiles_dir();
-    save_profile_in_dir(profile, &dir)
+    save_profile_in_dir(profile, &dir)?;
+    let profile_dir = dir.join(&profile.profile_id);
+    fs::create_dir_all(&profile_dir).map_err(|error| format!("Cannot create profile folder: {error}"))?;
+    save_json_atomic(&profile_dir.join("profile.json"), &profile_dir, &serde_json::to_string_pretty(profile).map_err(|error| error.to_string())?)?;
+    for layer in 1..=4 {
+        let config = LayerConfig::from_profile(profile, layer)?;
+        let path = profile_dir.join(format!("layer-{layer}.json"));
+        let text = serde_json::to_string_pretty(&config).map_err(|error| error.to_string())?;
+        save_json_atomic(&path, &profile_dir, &text)?;
+    }
+    Ok(())
 }
 
 fn save_profile_in_dir(profile: &Profile, dir: &std::path::Path) -> Result<(), String> {
@@ -534,6 +685,19 @@ mod tests {
         cleared.set_action("key-3-1", 1, KeyAction::None);
         assert_eq!(cleared.validate(), Ok(()));
         assert_eq!(cleared.action("key-3-1", 1), &KeyAction::None);
+    }
+
+    #[test]
+    fn per_layer_config_round_trip_preserves_other_layers() {
+        let mut profile = Profile::default_profile();
+        profile.set_action("key-3-1", 3, KeyAction::KeyChord { keys: vec!["CTRL".into(), "C".into()] });
+        let layer: LayerConfig = serde_json::from_str(&serde_json::to_string_pretty(&LayerConfig::from_profile(&profile, 3).unwrap()).unwrap()).unwrap();
+        let mut edited = layer.clone();
+        edited.assignments[0].action = KeyAction::Website { url: "https://example.com".into(), label: None };
+        let restored = edited.apply_to(&profile).unwrap();
+        assert!(matches!(restored.action("key-3-1", 3), KeyAction::Website { .. }));
+        assert_eq!(restored.action("key-3-1", 1), &KeyAction::None);
+        assert_eq!(restored.assignments.len(), 36);
     }
 
     #[test]
