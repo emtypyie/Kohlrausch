@@ -1,8 +1,0 @@
-import FreeCAD as App
-p=r"C:\Users\workf\OneDrive\Documents\Kohlrausch_Tray_Fit_Check.FCStd"
-d=App.openDocument(p); d.recompute(); o=[x for x in d.Objects if hasattr(x,'Shape') and not x.Shape.isNull()][0]
-f=open(r"D:\EMTYPYIE\Kohlrausch\work\fcstd-solids.txt","w")
-for i,s in enumerate(o.Shape.Solids):
- b=s.BoundBox
- f.write(f"{i} center={b.Center.x:.2f},{b.Center.y:.2f},{b.Center.z:.2f} size={b.XLength:.2f},{b.YLength:.2f},{b.ZLength:.2f} faces={len(s.Faces)}\n")
-f.close()

@@ -1,4 +1,0 @@
-before=205756
-tol=0.1, reduction=0.8, facets=41150
-tol=0.2, reduction=0.85, facets=30862
-tol=0.35, reduction=0.9, facets=20574

@@ -1,5 +1,0 @@
-import FreeCAD as App, MeshPart
-p=r"C:\Users\workf\OneDrive\Documents\Kohlrausch_Tray_Fit_Check.FCStd"
-d=App.openDocument(p); o=[x for x in d.Objects if hasattr(x,'Shape') and not x.Shape.isNull()][0]
-m=MeshPart.meshFromShape(Shape=o.Shape, LinearDeflection=0.5, AngularDeflection=0.4, Relative=False)
-open(r"D:\EMTYPYIE\Kohlrausch\work\mesh-methods.txt","w").write("facets="+str(m.CountFacets)+"\n"+"\n".join(x for x in dir(m) if any(k in x.lower() for k in ('decim','simpl','refine','smooth','segment'))))

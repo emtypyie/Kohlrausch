@@ -1,3 +1,0 @@
-source=C:\Users\workf\OneDrive\Documents\Kohlrausch_Tray_Fit_Check.FCStd
-solids=96 b-rep-faces=14418 mesh-facets=423720
-bounds=BoundBox (-31.7374, -44.1855, -2, 31.7374, 44.1855, 5.66005)

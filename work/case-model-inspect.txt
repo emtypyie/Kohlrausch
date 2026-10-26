@@ -1,6 +1,0 @@
-DOC C:\Users\workf\OneDrive\Documents\visrodeck_case_v6.FCStd
-SHAPE Feature kohlrausch_visrodeck type=Part::Feature solids=96 faces=14655 bounds=BoundBox (-31.7374, -44.1855, -3.91242, 31.7374, 44.1855, 3.83002)
-SHAPE Case_Tray Case_Tray type=Part::Feature solids=1 faces=100 bounds=BoundBox (-35.7196, -48.2196, -8.35, 35.7196, 48.2196, 5.09887)
-DOC C:\Users\workf\OneDrive\Documents\visrodeck_case_v6_color.FCStd
-SHAPE Feature kohlrausch_visrodeck type=Part::Feature solids=96 faces=14655 bounds=BoundBox (-31.7374, -44.1855, -3.91242, 31.7374, 44.1855, 3.83002)
-SHAPE Case_Tray Case_Tray type=Part::Feature solids=1 faces=100 bounds=BoundBox (-35.7196, -48.2196, -8.35, 35.7196, 48.2196, 5.09887)
