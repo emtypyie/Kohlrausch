@@ -1,0 +1,195 @@
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/pico-sdk/cmake/preload/toolchains/util/find_compiler.cmake:12 (find_program)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/find_compiler.cmake:39 (pico_find_compiler)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/pico_gcc_common.cmake:25 (pico_find_compiler_with_triples)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/pico_arm_gcc_common.cmake:20 (include)"
+      - "C:/pico-sdk/cmake/preload/toolchains/pico_arm_cortex_m0plus_gcc.cmake:7 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeDetermineSystem.cmake:146 (include)"
+      - "CMakeLists.txt:6 (project)"
+    mode: "program"
+    variable: "PICO_COMPILER_CC"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "arm-none-eabi-gcc"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Microsoft MPI\\Bin\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\nodejs\\"
+        - "D:\\WORK\\C compiler\\ucrt64\\bin"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\MinGW\\bin"
+        - "D:\\WORK\\bin"
+        - "C:\\Program Files\\Docker\\Docker\\resources\\bin"
+        - "C:\\Program Files\\GitHub CLI\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\8.1\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\WSL\\"
+        - "C:\\Users\\workf\\bin"
+        - "C:\\Users\\workf\\.cargo\\bin"
+        - "C:\\Users\\workf\\AppData\\Local\\Programs\\Python\\Python313\\Scripts"
+        - "C:\\Users\\workf\\AppData\\Local\\Programs\\Python\\Python313"
+        - "C:\\Users\\workf\\.local\\bin"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "D:\\WORK\\Microsoft VS Code\\bin"
+        - "C:\\Users\\workf\\AppData\\Roaming\\npm"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.PlatformTools_Microsoft.Winget.Source_8wekyb3d8bbwe\\platform-tools"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WinGet\\Links"
+        - "C:\\Users\\workf\\choco-portable\\bin"
+        - "D:\\WORK\\Antigravity IDE\\bin"
+        - "C:\\Users\\workf\\bin"
+        - "D:\\WORK\\Microsoft VS Code\\bin\\copilot-shim"
+        - "c:\\Users\\workf\\.vscode\\extensions\\ms-python.debugpy-2026.6.0-win32-x64\\bundled\\scripts\\noConfigScripts"
+        - "c:\\Users\\workf\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand"
+        - "D:\\WORK\\Microsoft VS Code\\bin\\copilot-shim"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/pico-sdk/cmake/preload/toolchains/util/find_compiler.cmake:12 (find_program)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/find_compiler.cmake:39 (pico_find_compiler)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/pico_gcc_common.cmake:25 (pico_find_compiler_with_triples)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/pico_arm_gcc_common.cmake:20 (include)"
+      - "C:/pico-sdk/cmake/preload/toolchains/pico_arm_cortex_m0plus_gcc.cmake:7 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeDetermineSystem.cmake:146 (include)"
+      - "CMakeLists.txt:6 (project)"
+    mode: "program"
+    variable: "PICO_COMPILER_CC"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "arm-none-eabi-gcc"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Microsoft MPI\\Bin\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\nodejs\\"
+        - "D:\\WORK\\C compiler\\ucrt64\\bin"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\MinGW\\bin"
+        - "D:\\WORK\\bin"
+        - "C:\\Program Files\\Docker\\Docker\\resources\\bin"
+        - "C:\\Program Files\\GitHub CLI\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\8.1\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\WSL\\"
+        - "C:\\Users\\workf\\bin"
+        - "C:\\Users\\workf\\.cargo\\bin"
+        - "C:\\Users\\workf\\AppData\\Local\\Programs\\Python\\Python313\\Scripts"
+        - "C:\\Users\\workf\\AppData\\Local\\Programs\\Python\\Python313"
+        - "C:\\Users\\workf\\.local\\bin"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "D:\\WORK\\Microsoft VS Code\\bin"
+        - "C:\\Users\\workf\\AppData\\Roaming\\npm"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.PlatformTools_Microsoft.Winget.Source_8wekyb3d8bbwe\\platform-tools"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WinGet\\Links"
+        - "C:\\Users\\workf\\choco-portable\\bin"
+        - "D:\\WORK\\Antigravity IDE\\bin"
+        - "C:\\Users\\workf\\bin"
+        - "D:\\WORK\\Microsoft VS Code\\bin\\copilot-shim"
+        - "c:\\Users\\workf\\.vscode\\extensions\\ms-python.debugpy-2026.6.0-win32-x64\\bundled\\scripts\\noConfigScripts"
+        - "c:\\Users\\workf\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand"
+        - "D:\\WORK\\Microsoft VS Code\\bin\\copilot-shim"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/pico-sdk/cmake/preload/toolchains/util/find_compiler.cmake:12 (find_program)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/find_compiler.cmake:39 (pico_find_compiler)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/pico_gcc_common.cmake:25 (pico_find_compiler_with_triples)"
+      - "C:/pico-sdk/cmake/preload/toolchains/util/pico_arm_gcc_common.cmake:20 (include)"
+      - "C:/pico-sdk/cmake/preload/toolchains/pico_arm_cortex_m0plus_gcc.cmake:7 (include)"
+      - "C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeDetermineSystem.cmake:146 (include)"
+      - "CMakeLists.txt:6 (project)"
+    mode: "program"
+    variable: "PICO_COMPILER_CC"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "arm-none-eabi-gcc"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Microsoft MPI\\Bin\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\nodejs\\"
+        - "D:\\WORK\\C compiler\\ucrt64\\bin"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\MinGW\\bin"
+        - "D:\\WORK\\bin"
+        - "C:\\Program Files\\Docker\\Docker\\resources\\bin"
+        - "C:\\Program Files\\GitHub CLI\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\8.1\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\WSL\\"
+        - "C:\\Users\\workf\\bin"
+        - "C:\\Users\\workf\\.cargo\\bin"
+        - "C:\\Users\\workf\\AppData\\Local\\Programs\\Python\\Python313\\Scripts"
+        - "C:\\Users\\workf\\AppData\\Local\\Programs\\Python\\Python313"
+        - "C:\\Users\\workf\\.local\\bin"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "D:\\WORK\\Microsoft VS Code\\bin"
+        - "C:\\Users\\workf\\AppData\\Roaming\\npm"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.PlatformTools_Microsoft.Winget.Source_8wekyb3d8bbwe\\platform-tools"
+        - "C:\\Users\\workf\\AppData\\Local\\Microsoft\\WinGet\\Links"
+        - "C:\\Users\\workf\\choco-portable\\bin"
+        - "D:\\WORK\\Antigravity IDE\\bin"
+        - "C:\\Users\\workf\\bin"
+        - "D:\\WORK\\Microsoft VS Code\\bin\\copilot-shim"
+        - "c:\\Users\\workf\\.vscode\\extensions\\ms-python.debugpy-2026.6.0-win32-x64\\bundled\\scripts\\noConfigScripts"
+        - "c:\\Users\\workf\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand"
+        - "D:\\WORK\\Microsoft VS Code\\bin\\copilot-shim"
+...
