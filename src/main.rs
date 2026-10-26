@@ -88,8 +88,10 @@ fn run_cli(command: Command) {
             Ok(profiles) => for profile in profiles { write_cli_output(&format!("{} ({}) · {} assignments\n", profile.name, profile.profile_id, profile.assignments.len()), false); },
             Err(error) => { write_cli_output(&format!("Profile storage error: {error}\n"), true); std::process::exit(1); }
         },
-        Command::Flash { dry_run: true } => write_cli_output("No firmware operation initiated: no compatible device is connected.\n", false),
-        Command::Flash { dry_run: false } => { write_cli_output("Firmware update unavailable: no compatible device is connected.\n", true); std::process::exit(2); }
+        // Flashing remains disabled until identification, target validation, confirmation,
+        // progress/error handling and post-flash verification exist. Dry-run never writes.
+        Command::Flash { dry_run: true } => write_cli_output("No firmware operation initiated: flashing disabled (no verified device/target). Dry-run has no effect.\n", false),
+        Command::Flash { dry_run: false } => { write_cli_output("Firmware update unavailable: flashing disabled pending device identification, target validation, confirmation and verification.\n", true); std::process::exit(2); }
     }
 }
 
@@ -617,7 +619,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
     let weak = ui.as_weak();
     ui.on_flash_request(move || if let Some(ui) = weak.upgrade() {
-        ui.set_status_message("Firmware flashing unavailable · no firmware operation initiated".into());
+        ui.set_status_message("Firmware flashing disabled pending identification, target validation, confirmation and verification.".into());
     });
     let weak = ui.as_weak();
     ui.on_port_selected(move |name| if let Some(ui) = weak.upgrade() {
