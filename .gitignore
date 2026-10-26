@@ -11,3 +11,15 @@ AGENTS.md
 
 # Ignore docs
 /docs/
+
+# Build artifacts
+/target/
+/node_modules/
+/work/firmware-host-build/
+/work/firmware-pico-build/
+*.pyc
+__pycache__/
+*.FCBak
+*.FCStd1
+.DS_Store
+Thumbs.db
