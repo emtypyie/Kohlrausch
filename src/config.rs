@@ -85,7 +85,8 @@ impl Profile {
         if self.schema_version != 2 { return Err("Unsupported profile schema version".into()); }
         if self.board_id != BOARD_ID { return Err("Profile is for a different board".into()); }
         if self.profile_id.trim().is_empty() || self.name.trim().is_empty() { return Err("Profile ID and name are required".into()); }
-        if !self.profile_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') { return Err("Profile ID may contain only letters, numbers, hyphens and underscores".into()); }
+        if !valid_stable_id(&self.profile_id) { return Err("Profile ID may contain only letters, numbers, hyphens and underscores".into()); }
+        if self.name.chars().count() > 64 { return Err("Profile name must be 64 characters or fewer".into()); }
         if self.assignments.len() != 36 { return Err("A profile must define exactly 9 keys on each of 4 layers".into()); }
         let mut seen = HashSet::new();
         for assignment in &self.assignments {
