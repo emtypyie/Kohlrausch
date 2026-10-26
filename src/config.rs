@@ -279,10 +279,21 @@ fn valid_stable_id(value: &str) -> bool {
 }
 
 pub fn profiles_dir() -> PathBuf {
-    std::env::var_os("APPDATA").or_else(|| std::env::var_os("LOCALAPPDATA"))
-        .or_else(|| std::env::var_os("USERPROFILE")).or_else(|| std::env::var_os("HOME"))
-        .map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."))
-        .join("Kohlrausch").join("profiles")
+    // Prefer user-writable storage under APPDATA/LOCALAPPDATA; never write beside executable.
+    if let Some(appdata) = std::env::var_os("APPDATA") {
+        return PathBuf::from(appdata).join("Kohlrausch").join("profiles");
+    }
+    if let Some(localappdata) = std::env::var_os("LOCALAPPDATA") {
+        return PathBuf::from(localappdata).join("Kohlrausch").join("profiles");
+    }
+    if let Some(userprofile) = std::env::var_os("USERPROFILE") {
+        return PathBuf::from(userprofile).join("AppData").join("Roaming").join("Kohlrausch").join("profiles");
+    }
+    if let Some(home) = std::env::var_os("HOME") {
+        return PathBuf::from(home).join(".config").join("kohlrausch").join("profiles");
+    }
+    // Last resort: use OS temp dir to avoid writing next to executable
+    std::env::temp_dir().join("Kohlrausch").join("profiles")
 }
 
 pub fn load_or_create_default() -> Result<Profile, String> {
@@ -301,7 +312,8 @@ pub fn load_or_create_default() -> Result<Profile, String> {
 
 pub fn load_active_profile() -> Result<Profile, String> {
     let dir = profiles_dir();
-    let marker = dir.parent().unwrap_or_else(|| std::path::Path::new(".")).join("active-profile");
+    let base = dir.parent().unwrap_or(&std::env::temp_dir().join("Kohlrausch")).to_path_buf();
+    let marker = base.join("active-profile");
     if marker.is_file() {
         if let Ok(profile_id) = fs::read_to_string(&marker) {
             let profile_id = profile_id.trim();
@@ -320,8 +332,9 @@ pub fn save_active_profile(profile_id: &str) -> Result<(), String> {
     if !load_profiles()?.iter().any(|profile| profile.profile_id == profile_id) {
         return Err("Profile no longer exists".into());
     }
-    let dir = profiles_dir().parent().unwrap_or_else(|| std::path::Path::new(".")).to_path_buf();
-    save_json_atomic(&dir.join("active-profile"), &dir, profile_id)
+    let base = profiles_dir().parent().unwrap_or(&std::env::temp_dir().join("Kohlrausch")).to_path_buf();
+    std::fs::create_dir_all(&base).map_err(|error| format!("Cannot create configuration directory: {error}"))?;
+    save_json_atomic(&base.join("active-profile"), &base, profile_id)
 }
 
 #[derive(Deserialize)]
