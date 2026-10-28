@@ -124,7 +124,7 @@ mod tests {
         assert_eq!(ids.len(), 9);
         for key in LOGICAL_KEYS {
             assert_eq!(key.physical_id, format!("key-{}", key.physical_reference.replace('.', "-")));
-            assert_eq!(BOARD_JSON.contains(&format!("\"{}\"", key.physical_id)), true);
+            assert!(BOARD_JSON.contains(&format!("\"{}\"", key.physical_id)));
         }
         assert_eq!(model_position_mm("key-3-1"), Some((-19.77, 7.92)));
         assert_eq!(lyr_position_mm(), (-19.05, 27.13));

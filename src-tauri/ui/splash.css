@@ -1,0 +1,57 @@
+* { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.splash {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 22px 30px;
+  color: #e8edf1;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.banner {
+  display: block;
+  width: 100%;
+  max-width: 840px;
+  aspect-ratio: 2.35 / 1;
+  object-fit: cover;
+  object-position: center;
+  filter: drop-shadow(0 14px 32px #0009);
+}
+
+.progress-track {
+  width: min(66vw, 540px);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #292c30;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #176ab2, #55a8dc);
+  box-shadow: 0 0 14px #348fd977;
+  transition: width 50ms linear;
+}
+
+.loading-label {
+  color: #a2abb2;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}

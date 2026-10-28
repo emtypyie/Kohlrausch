@@ -1,1 +1,1 @@
-{"name":"@kohlrausch/cli","version":"0.1.0","private":true,"type":"module","bin":{"kohlrausch":"bin/kohlrausch.js","khl":"bin/kohlrausch.js"},"dependencies":{"@opentui/solid":"0.6.8","solid-js":"1.9.12"}}
+{"name":"@kohlrausch/cli-prototype","version":"0.1.0","private":true,"type":"module","bin":{"kohlrausch-prototype":"bin/kohlrausch.js","khl-prototype":"bin/kohlrausch.js"},"dependencies":{"@opentui/solid":"0.6.8","solid-js":"1.9.12"}}

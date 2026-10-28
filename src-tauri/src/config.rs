@@ -456,7 +456,7 @@ pub fn load_profiles() -> Result<Vec<Profile>, String> {
     for profile in profiles.clone() {
         if !dir.join(&profile.profile_id).join("profile.json").is_file() { save_profile(&profile)?; }
     }
-    profiles.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    profiles.sort_by_key(|profile| profile.name.to_lowercase());
     Ok(profiles)
 }
 
@@ -547,7 +547,7 @@ pub fn save_profile(profile: &Profile) -> Result<(), String> {
 }
 
 fn save_profile_in_dir(profile: &Profile, dir: &std::path::Path) -> Result<(), String> {
-    fs::create_dir_all(&dir).map_err(|e| format!("Cannot create profile directory: {e}"))?;
+    fs::create_dir_all(dir).map_err(|e| format!("Cannot create profile directory: {e}"))?;
     let path = dir.join(format!("{}.json", profile.profile_id));
     let temp = dir.join(format!(".{}.{}.tmp", profile.profile_id, std::process::id()));
     let text = serde_json::to_string_pretty(profile).map_err(|e| e.to_string())?;

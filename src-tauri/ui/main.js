@@ -47,6 +47,20 @@
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+  const splashStartedAt = performance.now();
+  const splashProgressTimer = window.setInterval(() => {
+    const percent = Math.min(100, Math.floor(((performance.now() - splashStartedAt) / SPLASH_MINIMUM_MS) * 100));
+    const track = $(".startup-progress");
+    const fill = $(".startup-progress-fill");
+    if (track && fill) {
+      track.setAttribute("aria-valuenow", String(percent));
+      fill.style.width = percent + "%";
+    }
+    if (percent >= 100) window.clearInterval(splashProgressTimer);
+  }, 50);
+
+  document.addEventListener("contextmenu", (event) => event.preventDefault());
+
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -200,8 +214,6 @@
   function setLayer(layer) {
     state.layer = layer;
     $$(".layer-btn").forEach((b) => b.classList.toggle("active", Number(b.dataset.layer) === layer));
-    $("#oled-layer").textContent = String(layer);
-    $$(".oled-layer").forEach((b, index) => b.classList.toggle("active", index + 1 === layer));
     loadAssignment();
     updateInspector();
     refreshSelectionVisual();
@@ -285,7 +297,6 @@
     state.editorDirty = true;
     syncEditorInputs();
   });
-  $("#preview-shortcut").addEventListener("click", () => setStatus("Preview only · no input sent"));
 
   $("#website-url").addEventListener("input", (e) => { state.actionValue = e.target.value; markDirty(); });
   $("#website-label").addEventListener("input", (e) => { state.actionExtra = e.target.value; markDirty(); });
@@ -465,8 +476,6 @@
     const assignment = assignmentLabel(rawAssignmentFor(state.layer, keyId));
     $("#hover-title").textContent = "KEY " + key.physicalReference + "   ·   LAYER " + state.layer;
     $("#hover-physical").textContent = "Physical  " + key.physicalReference;
-    $("#hover-matrix").textContent = "Matrix  unverified";
-    $("#hover-gpio").textContent = "GPIO  unverified";
     $("#hover-action").textContent = "Action  " + assignment;
     const cardW = 240, cardH = 132;
     const left = clamp(anchor[0] + (anchor[0] < 420 ? 82 : -cardW - 82), 8, 840 - cardW - 8);
@@ -807,6 +816,7 @@
   $("#open-macro-editor").addEventListener("click", () => showSection("Macros"));
 
   /* ---------------- profiles ---------------- */
+  $("#active-profile-name").addEventListener("click", () => toggleProfiles());
   function toggleProfiles() {
     const popup = $("#profiles-popup");
     const open = popup.classList.contains("hidden");
@@ -918,7 +928,6 @@
       state.selectedProfileId = workspace.activeProfile.profileId;
     }
     $("#active-profile-name").textContent = state.profileName;
-    $$(".profile-inline").forEach((node) => { node.textContent = state.profileName; });
     renderProfiles();
     renderMacroList();
     loadAssignment();
@@ -937,6 +946,14 @@
       const open = body.classList.toggle("hidden");
       chevron.textContent = open ? "+" : "−";
     });
+  });
+  $("#read-license").addEventListener("click", async () => {
+    try {
+      await invoke("open_license");
+      setStatus("Opened license");
+    } catch (error) {
+      setStatus("Cannot open license: " + message(error));
+    }
   });
 
   /* ---------------- config studio ---------------- */
@@ -1098,29 +1115,23 @@
     const select = $("#port-select");
     select.innerHTML = "";
     if (!ports || ports.length === 0) {
-      select.appendChild(new Option("No serial ports", ""));
+      select.appendChild(new Option("No ports detected", ""));
     } else {
       ports.forEach((port) => select.appendChild(new Option(port, port)));
     }
     select.disabled = true;
-    $("#port-status").textContent = status || "No device connection · handshake unavailable";
+    $("#port-status").textContent = status || (ports && ports.length ? ports.length + " serial port(s) detected" : "No serial ports detected");
   }
 
   $("#refresh-ports").addEventListener("click", async () => {
     try {
       const result = await invoke("scan_ports");
       renderPorts(result.ports, result.status);
-      setStatus(
-        result.ports.length
-          ? result.ports.length + " serial port(s) detected · no verified device"
-          : "Port scan completed · no serial ports found"
-      );
+      setStatus(result.status);
     } catch (error) {
       setStatus("Port scan failed: " + message(error));
     }
   });
-  $("#board-select").addEventListener("change", () => setStatus("Board selection does not establish a connection"));
-  $("#flash-button").addEventListener("click", () => setStatus("Flashing requires a verified device handshake"));
 
   /* ---------------- boot ---------------- */
   async function init() {
@@ -1133,6 +1144,8 @@
     loadScene();
     try {
       const boot = await invoke("bootstrap");
+      $("#about-version-id").textContent = boot.versionId;
+      $("#about-build-id").textContent = boot.buildId;
       applyWorkspace(boot.workspace, { reloadConfig: true });
       renderPorts(boot.ports, boot.portStatus);
       if (boot.startupSection) showSection(boot.startupSection);
@@ -1140,6 +1153,12 @@
     } catch (error) {
       console.error(error);
       setStatus("Backend unavailable · " + message(error));
+    } finally {
+      try {
+        await invoke("finish_startup");
+      } catch (error) {
+        console.error("Cannot finish application startup", error);
+      }
     }
   }
 

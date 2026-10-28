@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { KOHLRAUSCH_BOARD, validateBoard } from "../../packages/board-definitions/index.ts";
 import { validateProfile, serializeProfile, parseProfile, validateMacro, type KeymapProfile, type MacroDefinition } from "../../packages/config-schema/src/index.ts";
+import { createDefaultProfile } from "../../host/simulator/profile-store.ts";
 import { advanceLayer, MockDeviceTransport, executeMockMacro } from "../../host/simulator/mock-device.ts";
 import { nextLayer } from "../../firmware/src/layer_logic.ts";
 import { isDeviceStatus } from "../../packages/device-protocol/src/index.ts";
@@ -14,12 +15,14 @@ function profile(): KeymapProfile {
 }
 
 describe("board definition", () => {
-  test("board schema and sample profile schema are valid JSON with required fields", () => {
+  test("prototype schema and product sample keep their separate versions", () => {
     const boardSchema = JSON.parse(readFileSync(new URL("../../packages/board-definitions/board.schema.json", import.meta.url), "utf8"));
     const profileSchema = JSON.parse(readFileSync(new URL("../../packages/config-schema/keymap-profile-v1.schema.json", import.meta.url), "utf8"));
     const sample = JSON.parse(readFileSync(new URL("../../profiles/default.json", import.meta.url), "utf8"));
     expect(boardSchema.required).toContain("keys"); expect(profileSchema.properties.schemaVersion.const).toBe(1);
-    expect(validateProfile(sample, ids)).toEqual([]);
+    expect(validateProfile(createDefaultProfile(), ids)).toEqual([]);
+    expect(sample.schemaVersion).toBe(2); expect(sample.boardId).toBe(KOHLRAUSCH_BOARD.boardId);
+    expect(sample.assignments).toHaveLength(36);
   });
   test("has nine unique keys in exact fixed positions", () => {
     expect(validateBoard(KOHLRAUSCH_BOARD)).toEqual([]);

@@ -19,6 +19,7 @@ pub fn run(options: cli::LaunchOptions) {
             } else {
                 None
             },
+            started_at: std::time::Instant::now(),
         })
         .invoke_handler(tauri::generate_handler![
             commands::bootstrap,
@@ -32,7 +33,9 @@ pub fn run(options: cli::LaunchOptions) {
             commands::save_config,
             commands::import_config,
             commands::save_macro,
-            commands::delete_macro
+            commands::delete_macro,
+            commands::open_license,
+            commands::finish_startup
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

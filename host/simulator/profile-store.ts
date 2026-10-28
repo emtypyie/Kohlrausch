@@ -1,7 +1,6 @@
 import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import sample from "../../profiles/default.json";
 import { KOHLRAUSCH_BOARD } from "../../packages/board-definitions/index.ts";
 import { parseProfile, serializeProfile, validateProfile, type KeyAction, type KeymapProfile, type LayerNumber } from "../../packages/config-schema/src/index.ts";
 
@@ -32,12 +31,12 @@ export function nextLayer(layer: LayerNumber): LayerNumber { return layer === 4 
 
 export class LocalProfileStore {
   readonly root: string;
-  constructor(root = process.env.APPDATA ? join(process.env.APPDATA, "Kohlrausch", "profiles") : join(homedir(), ".config", "kohlrausch", "profiles")) { this.root = root; }
+  constructor(root = process.env.APPDATA ? join(process.env.APPDATA, "KohlrauschPrototype", "profiles") : join(homedir(), ".config", "kohlrausch-prototype", "profiles")) { this.root = root; }
 
   async load(): Promise<KeymapProfile[]> {
     await mkdir(this.root, { recursive: true });
     const files = (await readdir(this.root)).filter(file => file.endsWith(".json")).sort();
-    if (files.length === 0) return [sample as KeymapProfile];
+    if (files.length === 0) return [createDefaultProfile()];
     const profiles: KeymapProfile[] = [];
     for (const file of files) {
       const value = await readFile(join(this.root, file), "utf8");

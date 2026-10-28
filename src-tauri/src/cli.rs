@@ -6,7 +6,11 @@ pub struct LaunchOptions {
 }
 
 #[derive(Debug, Parser)]
-#[command(name = "kohlrausch", version, about = "Kohlrausch Konfig macropad configuration")]
+#[command(
+    name = "kohlrausch",
+    version,
+    about = "Kohlrausch Konfig configuration and device diagnostics"
+)]
 struct Cli {
     /// Open the Config Studio workspace
     #[arg(long, visible_alias = "c")]
@@ -33,7 +37,11 @@ enum Command {
 
 #[derive(Debug, Subcommand)]
 enum DeviceCommand {
-    Status,
+    Status {
+        /// Include board metadata checks for hardware testing
+        #[arg(long)]
+        details: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -44,10 +52,35 @@ enum ProfileCommand {
 fn attach_parent_console() {
     #[cfg(windows)]
     if std::env::args_os().len() > 1 {
-        use windows_sys::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
+        use windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE;
+        use windows_sys::Win32::Storage::FileSystem::{
+            CreateFileW, FILE_GENERIC_WRITE, FILE_SHARE_WRITE, OPEN_EXISTING,
+        };
+        use windows_sys::Win32::System::Console::{
+            AttachConsole, GetStdHandle, SetStdHandle, ATTACH_PARENT_PROCESS, STD_ERROR_HANDLE,
+            STD_OUTPUT_HANDLE,
+        };
 
         unsafe {
             let _ = AttachConsole(ATTACH_PARENT_PROCESS);
+            let console_output: Vec<u16> = "CONOUT$\0".encode_utf16().collect();
+            for stream in [STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
+                let handle = GetStdHandle(stream);
+                if handle.is_null() || handle == INVALID_HANDLE_VALUE {
+                    let handle = CreateFileW(
+                        console_output.as_ptr(),
+                        FILE_GENERIC_WRITE,
+                        FILE_SHARE_WRITE,
+                        std::ptr::null(),
+                        OPEN_EXISTING,
+                        0,
+                        std::ptr::null_mut(),
+                    );
+                    if !handle.is_null() && handle != INVALID_HANDLE_VALUE {
+                        let _ = SetStdHandle(stream, handle);
+                    }
+                }
+            }
         }
     }
 }
@@ -99,29 +132,46 @@ fn write_cli_output(text: &str, is_error: bool) {
     }
 }
 
-fn device_status() -> String {
-    let mut ports = serialport::available_ports()
-        .unwrap_or_default()
-        .into_iter()
-        .map(|port| port.port_name)
-        .collect::<Vec<_>>();
-    ports.sort();
-    if ports.is_empty() {
-        "Device status: no serial ports detected; no compatible Kohlrausch device is connected.\n".to_owned()
+fn device_diagnostics() -> &'static str {
+    "\
+Hardware metadata:
+  Electrical matrix rows and columns: pending verification
+  GPIO assignments and diode direction: pending verification
+  LYR input polarity: pending verification
+  OLED controller, resolution, and I2C address: pending verification
+Firmware: hardware drivers are not available; flashing is disabled.
+"
+}
+
+fn device_status(details: bool) -> Result<String, String> {
+    let ports = crate::commands::serial_ports()?;
+    let port_status = if ports.is_empty() {
+        "No serial ports detected".to_owned()
     } else {
         format!(
-            "Device status: {} serial port(s) detected ({}); no verified Kohlrausch handshake has occurred.\n",
+            "{} serial port(s) detected: {}",
             ports.len(),
             ports.join(", ")
         )
+    };
+    let mut status = format!("Device connection: Disconnected\nSerial ports: {port_status}\n");
+    if details {
+        status.push_str(device_diagnostics());
     }
+    Ok(status)
 }
 
 fn run_cli(command: Command) {
     match command {
         Command::Device {
-            command: DeviceCommand::Status,
-        } => write_cli_output(&device_status(), false),
+            command: DeviceCommand::Status { details },
+        } => match device_status(details) {
+            Ok(status) => write_cli_output(&status, false),
+            Err(error) => {
+                write_cli_output(&format!("Device status error: {error}\n"), true);
+                std::process::exit(1);
+            }
+        },
         Command::Profiles {
             command: ProfileCommand::List,
         } => match config::load_profiles() {
@@ -204,5 +254,26 @@ mod tests {
                 command: ProfileCommand::List
             })
         ));
+    }
+
+    #[test]
+    fn device_status_diagnostics_option_parses() {
+        let cli = Cli::try_parse_from(["kohlrausch", "device", "status", "--details"]).unwrap();
+        assert!(matches!(
+            cli.command,
+            Some(Command::Device {
+                command: DeviceCommand::Status { details: true }
+            })
+        ));
+    }
+
+    #[test]
+    fn device_diagnostics_keep_hardware_facts_cli_only() {
+        let report = device_diagnostics();
+        assert!(report.contains("Electrical matrix rows and columns: pending verification"));
+        assert!(
+            report.contains("OLED controller, resolution, and I2C address: pending verification")
+        );
+        assert!(report.contains("flashing is disabled"));
     }
 }

@@ -5,7 +5,7 @@ use crate::config::{
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 
 #[derive(Default)]
 pub struct AppState {
@@ -14,6 +14,7 @@ pub struct AppState {
 
 pub struct StartupRoute {
     pub section: Option<String>,
+    pub started_at: std::time::Instant,
 }
 
 #[derive(Serialize)]
@@ -39,6 +40,8 @@ pub struct Bootstrap {
     startup_section: Option<String>,
     ports: Vec<String>,
     port_status: String,
+    version_id: String,
+    build_id: String,
 }
 
 #[derive(Serialize)]
@@ -148,7 +151,7 @@ fn make_workspace(
         .any(|profile| profile.profile_id == active.profile_id)
     {
         profiles.push(active.clone());
-        profiles.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        profiles.sort_by_key(|profile| profile.name.to_lowercase());
     }
     Workspace {
         active_profile: active,
@@ -238,20 +241,25 @@ fn config_files_for(profile: &Profile) -> Result<Vec<ConfigFile>, String> {
     Ok(files)
 }
 
-fn scan_ports_inner() -> (Vec<String>, String) {
+pub(crate) fn serial_ports() -> Result<Vec<String>, String> {
     let mut ports = serialport::available_ports()
-        .unwrap_or_default()
+        .map_err(|error| format!("Cannot enumerate serial ports: {error}"))?
         .into_iter()
         .map(|port| port.port_name)
         .collect::<Vec<_>>();
     ports.sort();
+    Ok(ports)
+}
+
+fn scan_ports_inner() -> (Vec<String>, String) {
+    let ports = match serial_ports() {
+        Ok(ports) => ports,
+        Err(error) => return (Vec::new(), error),
+    };
     let status = if ports.is_empty() {
-        "No serial ports found · no verified device handshake".to_owned()
+        "No serial ports detected".to_owned()
     } else {
-        format!(
-            "{} serial port(s) detected · no verified device handshake",
-            ports.len()
-        )
+        format!("{} serial port(s) detected", ports.len())
     };
     (ports, status)
 }
@@ -459,6 +467,8 @@ pub async fn bootstrap(
         startup_section: startup.section.clone(),
         ports,
         port_status,
+        version_id: env!("CARGO_PKG_VERSION").to_owned(),
+        build_id: env!("KOHLRAUSCH_BUILD_ID").to_owned(),
     })
 }
 
@@ -478,10 +488,7 @@ pub async fn scan_ports() -> Result<PortScan, String> {
 }
 
 #[tauri::command]
-pub async fn create_profile(
-    state: State<'_, AppState>,
-    name: String,
-) -> Result<Workspace, String> {
+pub async fn create_profile(state: State<'_, AppState>, name: String) -> Result<Workspace, String> {
     let _guard = state
         .write_lock
         .lock()
@@ -610,9 +617,11 @@ pub async fn save_assignment(
             },
         },
         "application" => {
-            let arguments = serde_json::from_str::<Vec<String>>(&input.arguments).map_err(|_| {
-                "Arguments must be a JSON array of strings, such as [\"--new-window\"]".to_owned()
-            })?;
+            let arguments =
+                serde_json::from_str::<Vec<String>>(&input.arguments).map_err(|_| {
+                    "Arguments must be a JSON array of strings, such as [\"--new-window\"]"
+                        .to_owned()
+                })?;
             let (executable_path, application_id) = application_location(&input.extra);
             KeyAction::Application {
                 name: input.value.trim().to_owned(),
@@ -794,6 +803,68 @@ pub async fn delete_macro(
     library.macros.remove(position);
     config::save_macro_library(&library)?;
     active_workspace(profiles)
+}
+
+#[tauri::command]
+pub async fn open_license() -> Result<(), String> {
+    let license_text = include_str!("../LICENSE");
+    let license_path = std::env::temp_dir().join("Kohlrausch-Konfig-LICENSE.txt");
+    std::fs::write(&license_path, license_text).map_err(|error| error.to_string())?;
+
+    #[cfg(target_os = "windows")]
+    {
+        let child = tauri::async_runtime::spawn_blocking(move || {
+            std::process::Command::new("notepad")
+                .arg(&license_path)
+                .spawn()
+                .map_err(|error| error.to_string())
+        })
+        .await
+        .map_err(|error| error.to_string())??;
+        let _ = child;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let child = tauri::async_runtime::spawn_blocking(move || {
+            std::process::Command::new("xdg-open")
+                .arg(&license_path)
+                .spawn()
+                .map_err(|error| error.to_string())
+        })
+        .await
+        .map_err(|error| error.to_string())??;
+        let _ = child;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn finish_startup(
+    app: tauri::AppHandle,
+    startup: State<'_, StartupRoute>,
+) -> Result<(), String> {
+    let remaining = std::time::Duration::from_secs(5).saturating_sub(startup.started_at.elapsed());
+    if !remaining.is_zero() {
+        tauri::async_runtime::spawn_blocking(move || std::thread::sleep(remaining))
+            .await
+            .map_err(|error| format!("Startup timer failed: {error}"))?;
+    }
+
+    let main = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main application window is unavailable".to_owned())?;
+    main.show()
+        .map_err(|error| format!("Cannot show main window: {error}"))?;
+    main.set_focus()
+        .map_err(|error| format!("Cannot focus main window: {error}"))?;
+    if let Some(splash) = app.get_webview_window("splash") {
+        splash
+            .close()
+            .map_err(|error| format!("Cannot close splash window: {error}"))?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
