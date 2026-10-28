@@ -1,6 +1,6 @@
 # Kohlrausch Konfig
 
-<p align="center"><img src="src-tauri/ui/assets/kohlrauschbannerd.png" alt="Kohlrausch Konfig startup banner" width="760"></p>
+<p align="center"><img src="src-tauri/ui/assets/readme-banner.png" alt="Kohlrausch Konfig startup banner" width="760"></p>
 
 Kohlrausch Konfig is a Windows and Linux desktop application built with Rust, Tauri 2, and a bundled HTML/CSS/JavaScript UI. On launch, a centered standalone splash window shows this banner and a five-second loading bar while the workspace starts. The earlier Slint implementation is retained in `slint-build/`; the Bun terminal prototype is in `apps/cli`. Neither is the current desktop frontend.
 
