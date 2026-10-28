@@ -156,4 +156,5 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: Kohlrausch Konfig ${{ needs.version.outputs.tag }}
           generate_release_notes: true
-          files: release-assets/*
+          files: release-assets/**/*
+          fail_on_unmatched_files: true
