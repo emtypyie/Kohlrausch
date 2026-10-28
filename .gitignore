@@ -5,15 +5,15 @@ dist/
 /decades/
 /work/
 AGENTS.md
-# Ignore local work files and agents instructions
 AGENTS.md
 /work/
-
-# Ignore docs
 /docs/
 
 # Build artifacts
 /target/
+/slint-build/target/
+/src-tauri/target/
+/src-tauri/gen/schemas/
 /node_modules/
 /work/firmware-host-build/
 /work/firmware-pico-build/

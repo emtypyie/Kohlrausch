@@ -1,0 +1,12 @@
+Geometry provenance
+
+Source FreeCAD document: C:\Users\workf\OneDrive\Documents\visrodeck_case_v6_color.FCStd
+Case tray: Case_Tray object
+PCB substrate: solids [0] from the kohlrausch_visrodeck Feature object
+PCB top modules: solids [1, 2, 3] from the same Feature object
+USB connector: solids [4, 5] from the same Feature object
+Switches: Cherry MX Switches by BlackCube, CC-BY-4.0; see docs/model-attributions.md
+
+The original key switch solids in the Feature object are excluded. The ten Cherry MX switch meshes are rendered over the case and PCB using fixed board coordinates. Nine programmable switch centers are shifted 5 mm toward the USB end; the dedicated LYR switch stays at its case position. Matrix electrical details and OLED controller metadata remain unverified.
+
+STL facets: case tray 11744; PCB 11248; PCB top modules 11712; USB 5996; Cherry MX switch 2159 each.

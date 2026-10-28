@@ -1,0 +1,1091 @@
+import { ComboBox, LineEdit, ListView, ScrollView, TextEdit } from "std-widgets.slint";
+
+export global KohlrauschTheme {
+    out property <brush> canvas: #080808;
+    out property <brush> chrome: #171717;
+    out property <brush> panel: #111111;
+    out property <brush> panel-inset: #090909;
+    out property <brush> border: #302d2b;
+    out property <brush> text: #e8edf1;
+    out property <brush> muted: #929da6;
+    out property <brush> blue: #0b4f97;
+    out property <brush> blue-border: #2875b9;
+    out property <brush> blue-selection: #1b2831;
+    out property <brush> blue-line: #347eaa;
+    out property <brush> button-secondary: #1d1f21;
+    out property <brush> button-secondary-hover: #292d30;
+    out property <brush> button-secondary-text: #e1e4e6;
+    out property <brush> button-primary: #222528;
+    out property <brush> button-primary-hover: #2b2f32;
+    out property <brush> button-active: #292c2e;
+    out property <brush> button-active-border: #596168;
+    out property <brush> button-border: #3b3e40;
+    out property <brush> focus-ring: #66747d;
+    out property <brush> file-icon-background: #f5f7f9;
+}
+
+component AppText inherits Text {
+    font-family: "Segoe UI";
+}
+
+component JsonCodeEditor inherits Rectangle {
+    in-out property <string> text;
+    in property <styled-text> highlighted-text;
+    in-out property <Point> caret-position: { x: 0px, y: 0px };
+    out property <bool> has-focus: code-input.has-focus;
+    callback edited(string);
+    background: KohlrauschTheme.panel-inset;
+    border-width: 1px;
+    border-color: KohlrauschTheme.border;
+    border-radius: 5px;
+    clip: true;
+
+    ScrollView {
+        width: parent.width;
+        height: parent.height;
+        vertical-scrollbar-policy: as-needed;
+        horizontal-scrollbar-policy: as-needed;
+        content-width: max(self.visible-width, code-input.preferred-width + 20px);
+        content-height: max(self.visible-height, code-input.preferred-height + 16px);
+
+        StyledText {
+            x: 10px; y: 8px;
+            width: max(parent.width - 20px, code-input.preferred-width);
+            height: max(parent.height - 16px, code-input.preferred-height);
+            text: root.highlighted-text;
+            default-font-family: "Consolas";
+            default-font-size: 14px;
+            default-color: #d8d2cf;
+            vertical-alignment: top;
+        }
+        code-input := TextInput {
+            x: 10px; y: 8px;
+            width: max(parent.width - 20px, self.preferred-width);
+            height: max(parent.height - 16px, self.preferred-height);
+            single-line: false;
+            wrap: no-wrap;
+            font-family: "Consolas";
+            font-size: 14px;
+            color: #00000000;
+            selection-background-color: #245b82;
+            selection-foreground-color: #ffffff;
+            text <=> root.text;
+            edited => { root.edited(self.text); }
+            cursor-position-changed(position) => { root.caret-position = position; }
+        }
+        Rectangle {
+            x: 10px + root.caret-position.x;
+            y: 8px + root.caret-position.y;
+            width: 1.5px;
+            height: 18px;
+            background: #4b9fe0;
+            visible: root.has-focus;
+        }
+    }
+}
+
+component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: false;
+    callback chosen();
+    height: 38px;
+    background: root.active ? KohlrauschTheme.blue-selection : touch.has-hover ? #202326 : #111111;
+    animate background { duration: 160ms; }
+    Rectangle { x: 0px; y: 6px; width: 2px; height: parent.height - 12px; background: root.active ? KohlrauschTheme.blue-line : #111111; }
+    AppText { x: 15px; vertical-alignment: center; text: root.label; color: root.active ? #ffffff : #d2d7dd; font-size: 15px; }
+    touch := TouchArea { mouse-cursor: pointer; clicked => { root.chosen(); } }
+}
+
+component ProfileFolderIcon inherits Rectangle {
+    width: 18px;
+    height: 16px;
+    background: KohlrauschTheme.blue;
+    border-width: 1px;
+    border-color: KohlrauschTheme.blue-border;
+    border-radius: 2px;
+    Rectangle { x: 1px; y: 1px; width: 8px; height: 3px; background: #6eb3f0; border-radius: 1px; }
+    Rectangle { x: 1px; y: 6px; width: parent.width - 2px; height: 1px; background: #6eb3f0; }
+}
+
+component ConfigFileIcon inherits Rectangle {
+    in property <string> glyph: "{}";
+    width: 18px;
+    height: 18px;
+    background: KohlrauschTheme.file-icon-background;
+    border-width: 1px;
+    border-color: KohlrauschTheme.blue-border;
+    border-radius: 2px;
+    AppText {
+        width: parent.width;
+        height: parent.height;
+        text: root.glyph;
+        color: KohlrauschTheme.blue;
+        font-family: "Consolas";
+        font-size: root.glyph == "{}" ? 8px : 9px;
+        font-weight: 700;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+component ActionButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> enabled: true;
+    in property <bool> active: false;
+    in property <bool> primary: false;
+    in property <bool> has-icon: false;
+    in property <image> icon;
+    callback pressed();
+    height: 34px;
+    background: !root.enabled ? #25282a : root.active ? (touch.has-hover ? KohlrauschTheme.button-primary-hover : KohlrauschTheme.button-active) : root.primary ? (touch.has-hover ? KohlrauschTheme.button-primary-hover : KohlrauschTheme.button-primary) : (touch.has-hover ? KohlrauschTheme.button-secondary-hover : KohlrauschTheme.button-secondary);
+    border-width: 1px;
+    border-color: !root.enabled ? #3b3f42 : root.active ? KohlrauschTheme.button-active-border : root.primary ? #4a5359 : touch.has-hover ? #555b5f : KohlrauschTheme.button-border;
+    border-radius: 5px;
+    animate background { duration: 160ms; }
+    animate border-color { duration: 160ms; }
+    button-focus := FocusScope {
+        width: parent.width;
+        height: parent.height;
+        enabled: root.enabled;
+        focus-on-tab-navigation: true;
+        key-pressed(event) => {
+            if event.text == Key.Space || event.text == Key.Return {
+                root.pressed();
+                accept
+            } else { reject }
+        }
+        HorizontalLayout {
+            width: parent.width;
+            height: parent.height;
+            alignment: center;
+            cross-axis-alignment: center;
+            spacing: 7px;
+            if root.has-icon: Image { source: root.icon; width: 14px; height: 14px; image-fit: contain; }
+            AppText {
+                text: root.label;
+                color: !root.enabled ? #777d81 : #e3e6e8;
+                font-size: 12px;
+                font-weight: 500;
+                vertical-alignment: center;
+            }
+        }
+        Rectangle {
+            x: 2px; y: 2px; width: parent.width - 4px; height: parent.height - 4px;
+            background: transparent;
+            border-width: 1px;
+            border-color: KohlrauschTheme.focus-ring;
+            border-radius: 3px;
+            visible: button-focus.has-focus && root.enabled;
+        }
+        touch := TouchArea {
+            enabled: root.enabled;
+            mouse-cursor: pointer;
+            clicked => { button-focus.focus(); root.pressed(); }
+        }
+    }
+}
+
+component AboutInfoRow inherits Rectangle {
+    in property <string> label;
+    in property <string> value;
+    height: 40px;
+    HorizontalLayout {
+        spacing: 16px;
+        AppText { width: 150px; text: root.label; color: #aaa3a0; font-size: 14px; vertical-alignment: center; }
+        AppText { horizontal-stretch: 1; text: root.value; color: #e5ddda; font-size: 14px; vertical-alignment: center; }
+    }
+}
+
+component InspectorTab inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: false;
+    callback pressed();
+    horizontal-stretch: 1;
+    height: 32px;
+    background: root.active ? #25292b : touch.has-hover ? #202326 : transparent;
+    animate background { duration: 160ms; }
+    AppText {
+        width: parent.width;
+        height: parent.height;
+        text: root.label;
+        color: root.active ? #ffffff : #d2d7dd;
+        font-size: 12px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    Rectangle {
+        x: 8px; y: parent.height - 2px; width: parent.width - 16px; height: 2px;
+        background: root.active ? #73818a : transparent;
+    }
+    touch := TouchArea { mouse-cursor: pointer; clicked => { root.pressed(); } }
+}
+
+component SceneCallout inherits Rectangle {
+    in property <string> title;
+    in property <string> detail;
+    in property <float> reveal: 0;
+    width: 128px;
+    height: 38px;
+    background: KohlrauschTheme.chrome;
+    border-width: 1px;
+    border-color: #3f6b89;
+    border-radius: 4px;
+    opacity: root.reveal;
+    animate opacity { duration: 180ms; }
+    Rectangle { x: 0px; width: 3px; height: parent.height; background: #287fc0; }
+    AppText { x: 10px; y: 4px; width: parent.width - 14px; height: 16px; text: root.title; color: #edf3f7; font-size: 11px; font-weight: 700; vertical-alignment: center; }
+    AppText { x: 10px; y: 20px; width: parent.width - 14px; height: 12px; text: root.detail; color: #aab8c2; font-size: 8px; vertical-alignment: center; }
+}
+
+component WindowButton inherits Rectangle {
+    in property <string> glyph;
+    in property <bool> close-button: false;
+    callback pressed();
+    width: 38px;
+    height: 34px;
+    background: touch.has-hover ? #24282b : transparent;
+    animate background { duration: 160ms; }
+    AppText {
+        text: root.glyph;
+        color: #eee9e7;
+        font-family: "Segoe UI Symbol";
+        font-size: 19px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    touch := TouchArea { mouse-cursor: pointer; clicked => { root.pressed(); } }
+}
+
+export component MainWindow inherits Window {
+    title: "Kohlrausch Konfig";
+    no-frame: true;
+    resize-border-width: 6px;
+    min-width: 1140px;
+    min-height: 620px;
+    preferred-width: 1280px;
+    preferred-height: 720px;
+    background: KohlrauschTheme.canvas;
+
+    in-out property <string> active-section: "Keymaps";
+    in-out property <int> active-layer: 1;
+    in-out property <string> selected-key: "logical-1-1";
+    in-out property <string> selected-key-label: "1.1";
+    in-out property <string> physical-reference: "3.1";
+    in-out property <string> physical-key-id: "key-3-1";
+    in-out property <string> inspector-title: "1.1  /  LAYER 1";
+    in-out property <string> assignment-text: "Unassigned";
+    in-out property <string> profile-name: "Default";
+    in-out property <bool> about-product-open: true;
+    in-out property <bool> about-license-open: true;
+    in-out property <string> status-message: "Profile ready";
+    in-out property <string> action-value: "";
+    in-out property <string> action-extra: "";
+    in-out property <string> action-arguments: "[]";
+    in-out property <string> editor-kind: "keystroke";
+    in-out property <string> editor-error: "";
+    in-out property <bool> editor-dirty: false;
+    in-out property <bool> capturing-shortcut: false;
+    in-out property <[string]> macro-options: [];
+    in-out property <int> macro-index: -1;
+    in-out property <int> inspector-macro-index: -1;
+    in-out property <string> macro-detail: "No saved macros";
+    in-out property <string> raw-config: "";
+    in-out property <styled-text> config-highlight;
+    in-out property <[string]> config-files: [];
+    in-out property <[int]> config-file-kinds: [];
+    in-out property <int> selected-config-file: -1;
+    in-out property <string> selected-config-label: "layer-1.json";
+    in-out property <string> profile-name-edit: "";
+    in-out property <string> new-profile-name: "";
+    in-out property <image> scene-image;
+    in-out property <int> startup-sequence: 0;
+    in-out property <bool> hover-visible: false;
+    in-out property <string> hover-label: "";
+    in-out property <string> hover-hardware: "";
+    in-out property <string> hover-matrix: "";
+    in-out property <string> hover-gpio: "";
+    in-out property <string> hover-action: "";
+    in-out property <int> hover-layer: 1;
+    in-out property <float> hover-anchor-x: 360;
+    in-out property <float> hover-anchor-y: 270;
+    in-out property <bool> selection-visible: false;
+    in-out property <float> selection-anchor-x: 360;
+    in-out property <float> selection-anchor-y: 270;
+    in-out property <[string]> board-options: ["Kohlrausch RP2040 · Rev A (provisional)"];
+    in-out property <int> board-index: 0;
+    in-out property <string> board-name: "Kohlrausch RP2040 · Rev A (provisional)";
+    in-out property <[string]> port-options: [];
+    in-out property <bool> ports-available: false;
+    in-out property <int> port-index: 0;
+    in-out property <string> selected-port: "";
+    in-out property <string> port-status: "No device connection";
+    in-out property <string> macro-mode: "Website";
+    in-out property <string> macro-name: "";
+    in-out property <string> macro-value: "";
+    in-out property <string> macro-delay: "0";
+    in-out property <string> macro-preview: "No actions saved";
+    in-out property <[string]> macro-events: [];
+    in-out property <[string]> macro-names: [];
+    in-out property <int> macro-event-index: -1;
+    in-out property <bool> macro-recording: false;
+    in-out property <string> macro-timing: "Fixed delay";
+    in-out property <string> macro-loop: "Once";
+    in-out property <string> macro-loop-count: "1";
+    in-out property <string> macro-error: "";
+    in-out property <[string]> profile-labels: [];
+    in-out property <[string]> profile-ids: [];
+    in-out property <int> profile-selected-index: -1;
+    in-out property <bool> profiles-popup-open: false;
+    in-out property <bool> profile-delete-confirm: false;
+
+    scene-entrance := Timer {
+        interval: 110ms;
+        running: root.active-section == "Keymaps" && root.startup-sequence < 10;
+        triggered() => { root.startup-sequence += 1; }
+    }
+
+    callback navigate(string);
+    callback select-key(string);
+    callback select-layer(int);
+    callback cycle-lyr();
+    callback save-action(string, string, string, string);
+    callback cancel-action();
+    callback capture-key(string);
+    callback test-action();
+    callback open-macro-editor();
+    callback rename-profile(string);
+    callback create-profile(string);
+    callback refresh-profiles();
+    callback switch-profile(string);
+    callback delete-profile(string);
+    callback save-raw-config(string);
+    callback config-source-edited(string);
+    callback select-config-file(int);
+    callback import-config-file();
+    callback import-config-folder();
+    callback pick-key(float, float) -> string;
+    callback hover-at(float, float);
+    callback board-selected(string);
+    callback port-selected(string);
+    callback refresh-ports();
+    callback save-macro(string, string, string, string, string);
+    callback add-macro-step(string, string, string);
+    callback select-macro(int);
+    callback new-macro();
+    callback delete-macro(int);
+    callback remove-macro-event(int);
+    callback clear-macro-events();
+    callback capture-macro-key(string);
+    callback macro-recording-changed(bool);
+    callback flash-request();
+
+    Rectangle {
+        background: KohlrauschTheme.canvas;
+        VerticalLayout {
+            spacing: 0px;
+            WindowMoveArea {
+                height: 58px;
+                Rectangle {
+                    width: parent.width;
+                    height: parent.height;
+                    background: KohlrauschTheme.chrome;
+                    HorizontalLayout {
+                        cross-axis-alignment: center;
+                        padding-left: 20px; padding-right: 8px; spacing: 11px;
+                        Rectangle {
+                            width: 32px; height: 36px; background: transparent;
+                            cross-axis-self-alignment: center;
+                            Image { source: @image-url("assets/visrodeck_instruments.png"); x: 1px; y: 3px; width: 30px; height: 30px; image-fit: contain; }
+                        }
+                        AppText { text: "KOHLRAUSCH KONFIG"; color: #f3efed; font-size: 16px; font-weight: 700; vertical-alignment: center; }
+                        AppText { text: "3×3 MACROPAD"; color: #99918e; font-size: 12px; vertical-alignment: center; }
+                        Rectangle { horizontal-stretch: 1; }
+                        AppText { text: "●"; color: #ff7048; font-size: 14px; vertical-alignment: center; }
+                        AppText { text: "OFFLINE"; color: #d1cac7; vertical-alignment: center; font-size: 13px; }
+                        Rectangle { width: 8px; }
+                        WindowButton { glyph: "—"; pressed => { root.minimized = true; } }
+                        WindowButton { glyph: root.maximized ? "❐" : "□"; pressed => { root.maximized = !root.maximized; } }
+                        WindowButton { glyph: "×"; close-button: true; pressed => { root.close(); } }
+                    }
+                }
+            }
+            HorizontalLayout {
+                vertical-stretch: 1;
+                min-height: 0px;
+                spacing: 0px;
+                Rectangle {
+                    width: 194px; background: KohlrauschTheme.chrome;
+                    VerticalLayout {
+                        padding-left: 14px; padding-right: 14px; padding-top: 19px; spacing: 4px;
+                        AppText { text: "WORKSPACE"; color: #827d7b; font-size: 12px; }
+                        nav-keymaps := NavItem { label: "Keymaps"; active: root.active-section == "Keymaps"; chosen => { root.navigate("Keymaps"); } }
+                        nav-macros := NavItem { label: "Macros"; active: root.active-section == "Macros"; chosen => { root.navigate("Macros"); } }
+                        nav-profiles := NavItem { label: "Profiles"; active: root.profiles-popup-open; chosen => { root.profile-delete-confirm = false; root.profiles-popup-open = !root.profiles-popup-open; if root.profiles-popup-open { root.refresh-profiles(); } } }
+                        nav-device := NavItem { label: "Device settings"; active: root.active-section == "Device settings"; chosen => { root.navigate("Device settings"); } }
+                        nav-config := NavItem { label: "Config Studio"; active: root.active-section == "Config Studio"; chosen => { root.navigate("Config Studio"); } }
+                        nav-about := NavItem { label: "About"; active: root.active-section == "About & license"; chosen => { root.navigate("About & license"); } }
+                        Rectangle { vertical-stretch: 1; }
+                        Rectangle { height: 1px; background: #332f2d; }
+                        AppText { text: "ACTIVE PROFILE"; color: #817a78; font-size: 11px; }
+                        AppText { text: root.profile-name; color: #d6cfcc; font-size: 14px; }
+                        Rectangle { height: 8px; }
+                    }
+                }
+                Rectangle {
+                    horizontal-stretch: 1;
+                    background: #090909;
+                    clip: true;
+                    VerticalLayout {
+                        padding-left: root.active-section == "Macros" ? 0px : 27px;
+                        padding-right: root.active-section == "Keymaps" || root.active-section == "Macros" ? 0px : 25px;
+                        padding-top: root.active-section == "Macros" ? 0px : 20px;
+                        padding-bottom: root.active-section == "Keymaps" || root.active-section == "Macros" ? 0px : 16px;
+                        spacing: root.active-section == "Macros" ? 0px : 14px;
+                        if root.active-section == "About & license": AppText { text: "SYSTEM  ›  ABOUT"; color: #8b8582; font-size: 12px; }
+                        if root.active-section != "Keymaps" && root.active-section != "Macros" && root.active-section != "About & license": AppText { text: "WORKSPACE  /  \{root.active-section}   ·   \{root.profile-name}"; color: #8b8582; font-size: 12px; }
+
+                        if root.active-section == "Keymaps": HorizontalLayout {
+                            spacing: 22px; vertical-stretch: 1; cross-axis-alignment: stretch;
+                            VerticalLayout {
+                                horizontal-stretch: 1; vertical-stretch: 1; spacing: 10px;
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    cross-axis-alignment: center;
+                                    AppText { text: "Keymap editor"; color: #f0ecea; font-size: 24px; font-weight: 600; }
+                                    Rectangle { horizontal-stretch: 1; }
+                                    HorizontalLayout {
+                                        spacing: 4px;
+                                        for number in [1, 2, 3, 4]: ActionButton {
+                                            width: 64px; height: 30px; active: root.active-layer == number;
+                                            label: "LAYER \{number}";
+                                            pressed => { root.select-layer(number); }
+                                        }
+                                    }
+                                }
+                                AppText { text: "Select a switch to edit its action."; color: #9b9592; font-size: 13px; }
+                                Rectangle {
+                                    horizontal-stretch: 1; vertical-stretch: 1; min-height: 0px;
+                                    background: KohlrauschTheme.panel-inset; clip: true;
+                                    Rectangle {
+                                        width: min(parent.width, parent.height * 1.5555556);
+                                        height: self.width * 0.6428571;
+                                        x: (parent.width - self.width) / 2;
+                                        y: (parent.height - self.height) / 2;
+                                        background: KohlrauschTheme.panel-inset; border-width: 1px; border-color: KohlrauschTheme.border; border-radius: 5px;
+                                        transform-rotation: root.startup-sequence < 3 ? -1.2deg : 0deg;
+                                        animate transform-rotation { duration: 300ms; }
+                                    Image {
+                                        source: root.scene-image;
+                                        width: parent.width; height: parent.height; image-fit: fill;
+                                    }
+                                    scene-touch := TouchArea {
+                                        width: parent.width; height: parent.height; mouse-cursor: pointer;
+                                        changed mouse-x => {
+                                            if scene-touch.has-hover && !scene-touch.pressed { root.hover-at(scene-touch.mouse-x / scene-touch.width * 840, scene-touch.mouse-y / scene-touch.height * 540); }
+                                        }
+                                        changed mouse-y => {
+                                            if scene-touch.has-hover && !scene-touch.pressed { root.hover-at(scene-touch.mouse-x / scene-touch.width * 840, scene-touch.mouse-y / scene-touch.height * 540); }
+                                        }
+                                        clicked => {
+                                            let id = root.pick-key(scene-touch.mouse-x / scene-touch.width * 840, scene-touch.mouse-y / scene-touch.height * 540);
+                                            if id != "" { root.select-key(id); }
+                                        }
+                                        changed has-hover => { if !scene-touch.has-hover { root.hover-at(-1, -1); } }
+                                    }
+                                    if root.startup-sequence > 0 && root.startup-sequence < 4: Rectangle {
+                                        x: parent.width * (0.26 + Math.mod(root.startup-sequence, 3) * 0.12);
+                                        y: parent.height * 0.12;
+                                        width: parent.width * 0.24;
+                                        height: 2px;
+                                        background: #4b9fe0;
+                                        opacity: 0.7;
+                                    }
+                                    if root.startup-sequence >= 7: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 309 187 L 270 140 L 198 140";
+                                        stroke: #287fc055; stroke-width: 4px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 6) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 7: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 309 187 L 270 140 L 198 140";
+                                        stroke: #78b5e1; stroke-width: 1.5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 6) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 7: SceneCallout {
+                                        x: 68px; y: parent.height * 0.2593 - self.height / 2;
+                                        title: "LYR SWITCH"; detail: "DEDICATED INPUT";
+                                        reveal: clamp((root.startup-sequence - 6) / 2, 0, 1);
+                                    }
+                                    if root.startup-sequence >= 8: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 408 116 L 442 66 L 515 66";
+                                        stroke: #287fc055; stroke-width: 4px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 7) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 8: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 408 116 L 442 66 L 515 66";
+                                        stroke: #78b5e1; stroke-width: 1.5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 7) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 8: SceneCallout {
+                                        x: parent.width * 0.632; y: parent.height * 0.1222 - self.height / 2;
+                                        title: "RP2040"; detail: "DEVICE PORT";
+                                        reveal: clamp((root.startup-sequence - 7) / 2, 0, 1);
+                                    }
+                                    if root.startup-sequence >= 9: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 512 205 L 560 150 L 650 150";
+                                        stroke: #287fc055; stroke-width: 4px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 8) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 9: Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 840; viewbox-height: 540; fit: fill;
+                                        commands: "M 512 205 L 560 150 L 650 150";
+                                        stroke: #78b5e1; stroke-width: 1.5px; stroke-line-cap: round; stroke-line-join: round;
+                                        opacity: clamp((root.startup-sequence - 8) / 2, 0, 1);
+                                        animate opacity { duration: 180ms; }
+                                    }
+                                    if root.startup-sequence >= 9: SceneCallout {
+                                        x: parent.width - self.width - 8px; y: parent.height * 0.2778 - self.height / 2;
+                                        title: "KEY ARRAY"; detail: "9 PROGRAMMABLE";
+                                        reveal: clamp((root.startup-sequence - 8) / 2, 0, 1);
+                                    }
+                                    if root.selection-visible: Rectangle {
+                                        x: clamp(root.selection-anchor-x / 840 * parent.width - 23px, 3px, parent.width - 49px);
+                                        y: clamp(root.selection-anchor-y / 540 * parent.height - 23px, 3px, parent.height - 49px);
+                                        width: 46px; height: 46px;
+                                        border-width: 2px; border-color: #ff7048; border-radius: 8px;
+                                        background: transparent;
+                                    }
+                                    if root.hover-visible: Rectangle {
+                                        x: clamp(root.hover-anchor-x / 840 * parent.width + (root.hover-anchor-x < 420 ? 82px : -self.width - 82px), 8px, parent.width - self.width - 8px);
+                                        y: clamp(root.hover-anchor-y / 540 * parent.height + (root.hover-anchor-y < 175 ? 20px : -self.height - 14px), 8px, parent.height - self.height - 8px);
+                                        width: 240px; height: 132px; background: #191817ed;
+                                        border-width: 1px; border-color: #9c513a; border-radius: 3px;
+                                        VerticalLayout {
+                                            padding: 10px; spacing: 4px;
+                                            AppText { text: "KEY  \{root.hover-label}   ·   LAYER \{root.hover-layer}"; color: #fff0ea; font-size: 13px; font-weight: 700; }
+                                            AppText { text: "Physical  \{root.hover-hardware}"; color: #d2cbc8; font-size: 11px; overflow: elide; }
+                                            AppText { text: "Matrix  \{root.hover-matrix}"; color: #aaa3a0; font-size: 11px; overflow: elide; }
+                                            AppText { text: "GPIO  \{root.hover-gpio}"; color: #aaa3a0; font-size: 11px; overflow: elide; }
+                                            AppText { text: "Action  \{root.hover-action}"; color: #ffc0a8; font-size: 11px; overflow: elide; }
+                                        }
+                                    }
+                                }
+                            }
+                            }
+                            Rectangle { width: 1px; vertical-stretch: 1; background: #302d2c; }
+                            Rectangle {
+                                width: 304px; vertical-stretch: 1;
+                                background: KohlrauschTheme.panel;
+                                VerticalLayout {
+                                    padding-left: 16px; padding-right: 20px; padding-top: 16px; padding-bottom: 12px; spacing: 5px;
+                                    AppText { text: "ACTION INSPECTOR"; color: #a39a96; font-size: 11px; }
+                                    AppText { text: root.inspector-title; color: #f5efec; font-size: 22px; font-weight: 600; }
+                                    Rectangle { height: 1px; background: #393432; }
+                                    AppText { text: "LOGICAL KEY ID"; color: #918885; font-size: 9px; }
+                                    AppText { text: root.selected-key; color: #d2cbc8; font-size: 10px; }
+                                    AppText { text: "PHYSICAL SWITCH  ·  MATRIX/GPIO UNVERIFIED"; color: #918885; font-size: 9px; }
+                                    AppText { text: "\{root.physical-reference}  ·  \{root.physical-key-id}"; color: #d2cbc8; font-size: 11px; }
+                                    Rectangle { height: 1px; background: #393432; }
+                                    AppText { text: "CURRENT ASSIGNMENT"; color: #918885; font-size: 10px; }
+                                    AppText { text: root.assignment-text; color: #e5ddda; font-size: 13px; wrap: word-wrap; }
+                                    AppText { text: "ASSIGN ACTION"; color: #918885; font-size: 10px; }
+                                    Rectangle {
+                                        height: 34px; background: #171c20; border-width: 1px; border-color: KohlrauschTheme.border; border-radius: 5px;
+                                        HorizontalLayout { padding: 1px; spacing: 1px;
+                                            InspectorTab { label: "Keys"; active: root.editor-kind == "keyChord"; pressed => { root.editor-kind = "keyChord"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                            InspectorTab { label: "Macro"; active: root.editor-kind == "macro"; pressed => { root.editor-kind = "macro"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.macro-index = -1; root.editor-dirty = true; root.editor-error = ""; } }
+                                            InspectorTab { label: "Web"; active: root.editor-kind == "website"; pressed => { root.editor-kind = "website"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                            InspectorTab { label: "App"; active: root.editor-kind == "application"; pressed => { root.editor-kind = "application"; root.action-value = ""; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                            InspectorTab { label: "Clicks"; active: root.editor-kind == "mouseAction"; pressed => { root.editor-kind = "mouseAction"; root.action-value = "Left click"; root.action-extra = ""; root.action-arguments = "[]"; root.editor-dirty = true; root.editor-error = ""; } }
+                                        }
+                                    }
+                                    if root.editor-kind == "keyChord": VerticalLayout {
+                                        height: 96px; vertical-stretch: 0; spacing: 4px;
+                                        Rectangle { height: 25px; background: #101820; border-width: 1px; border-color: #34536a; border-radius: 4px;
+                                            AppText { x: 8px; width: parent.width - 16px; vertical-alignment: center; text: root.action-value == "" ? "No shortcut captured" : root.action-value; color: #e5ddda; font-size: 12px; overflow: elide; }
+                                        }
+                                        FocusScope {
+                                            height: 32px; vertical-stretch: 0;
+                                            key-pressed(event) => {
+                                                if root.capturing-shortcut && event.text != "" {
+                                                    root.capture-key((event.modifiers.control ? "CTRL+" : "") + (event.modifiers.shift ? "SHIFT+" : "") + (event.modifiers.alt ? "ALT+" : "") + (event.modifiers.meta ? "META+" : "") + (event.text == " " ? "SPACE" : event.text));
+                                                    root.capturing-shortcut = false;
+                                                    accept
+                                                } else { reject }
+                                            }
+                                            ActionButton { label: root.capturing-shortcut ? "Press shortcut…" : "Capture shortcut"; width: 100%; height: 32px; primary: true; pressed => { root.capturing-shortcut = true; parent.focus(); } }
+                                        }
+                                        HorizontalLayout { height: 28px; spacing: 5px;
+                                            ActionButton { label: "Clear"; width: 80px; height: 28px; pressed => { root.action-value = ""; root.editor-dirty = true; } }
+                                            ActionButton { label: "Preview"; width: 90px; height: 28px; pressed => { root.test-action(); } }
+                                            AppText { text: "No input sent"; color: #88817e; font-size: 9px; vertical-alignment: center; }
+                                        }
+                                    }
+                                    if root.editor-kind == "macro": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        ComboBox { model: root.macro-options; current-index <=> root.inspector-macro-index; selected(value) => { root.action-value = value; root.macro-detail = value; root.editor-dirty = true; } }
+                                        AppText { text: root.macro-detail; color: #aaa3a0; font-size: 10px; wrap: word-wrap; }
+                                        ActionButton { label: "Open macro editor"; width: 100%; pressed => { root.open-macro-editor(); } }
+                                    }
+                                    if root.editor-kind == "website": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        LineEdit { height: 30px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-value; placeholder-text: "https://example.com"; edited => { root.editor-dirty = true; } }
+                                        LineEdit { height: 30px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-extra; placeholder-text: "Label (optional)"; edited => { root.editor-dirty = true; } }
+                                        AppText { text: "HTTP or HTTPS only · opens when host support exists"; color: #88817e; font-size: 9px; wrap: word-wrap; }
+                                    }
+                                    if root.editor-kind == "application": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        LineEdit { height: 29px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-value; placeholder-text: "Application name"; edited => { root.editor-dirty = true; } }
+                                        LineEdit { height: 29px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-extra; placeholder-text: "Path or application ID (optional)"; edited => { root.editor-dirty = true; } }
+                                        LineEdit { height: 29px; font-family: "Segoe UI"; font-size: 12px; text <=> root.action-arguments; placeholder-text: "Arguments as JSON array, e.g. [\"--new-window\"]"; edited => { root.editor-dirty = true; } }
+                                        AppText { text: "Manual entry · launch support is not enabled"; color: #88817e; font-size: 9px; }
+                                    }
+                                    if root.editor-kind == "mouseAction": VerticalLayout {
+                                        vertical-stretch: 0; spacing: 4px;
+                                        ComboBox { model: ["Left click", "Right click", "Double click", "Scroll up", "Scroll down"]; current-value: root.action-value; selected(value) => { root.action-value = value; root.editor-dirty = true; } }
+                                        AppText { text: "Coordinates are not configured. This saves a named mock action only."; color: #88817e; font-size: 9px; wrap: word-wrap; }
+                                    }
+                                    if root.editor-kind == "macro" && root.editor-error != "": AppText { text: root.editor-error; color: #ff8a70; font-size: 10px; wrap: word-wrap; }
+                                    if root.editor-kind != "macro" && root.editor-error != "": AppText { text: root.editor-error; color: #ff8a70; font-size: 10px; wrap: word-wrap; }
+                                    AppText { text: root.editor-dirty ? "UNSAVED CHANGES" : "Saved assignment · local profile"; color: root.editor-dirty ? #ff9c72 : #88817e; font-size: 10px; }
+                                    HorizontalLayout { spacing: 6px;
+                                        ActionButton { label: "Save"; width: 76px; active: true; pressed => { root.save-action(root.editor-kind, root.action-value, root.action-extra, root.action-arguments); } }
+                                        ActionButton { label: "Cancel"; width: 76px; pressed => { root.cancel-action(); } }
+                                        ActionButton { label: "Clear"; width: 68px; pressed => { root.save-action("none", "", "", "[]"); } }
+                                    }
+                                    Rectangle { vertical-stretch: 1; }
+                                    AppText { text: "Changes stay in this profile. Host actions are not executed."; color: #88817e; font-size: 9px; wrap: word-wrap; }
+                                }
+                            }
+                        }
+
+                        if root.active-section == "Macros": HorizontalLayout {
+                            spacing: 0px; min-height: 0px; cross-axis-alignment: stretch;
+                            vertical-stretch: 1;
+                            Rectangle {
+                                horizontal-stretch: 1;
+                                background: #090909;
+                                VerticalLayout {
+                                    padding-left: 27px; padding-right: 10px; padding-top: 20px; padding-bottom: 16px;
+                                    spacing: 10px; vertical-stretch: 1;
+                            HorizontalLayout {
+                                AppText { text: "Macro Editor"; color: #f0ecea; font-size: 23px; font-weight: 600; }
+                                Rectangle { horizontal-stretch: 1; }
+                                AppText { text: root.macro-recording ? "● RECORDING · APP FOCUSED" : "LOCAL MACRO LIBRARY"; color: root.macro-recording ? #ff7048 : #918885; font-size: 10px; vertical-alignment: center; }
+                            }
+                            AppText { text: "Capture keystrokes in this window or assemble events manually. Saved macros are not executed."; color: #aaa3a0; font-size: 12px; }
+                            HorizontalLayout { spacing: 10px; vertical-stretch: 1; cross-axis-alignment: stretch;
+                                Rectangle {
+                                    width: 190px; background: #111111; border-width: 1px; border-color: #302d2b; border-radius: 3px;
+                                    VerticalLayout { padding: 8px; spacing: 6px;
+                                        AppText { text: "MACRO NAME"; color: #9a918e; font-size: 10px; }
+                                        LineEdit { height: 32px; font-family: "Segoe UI"; font-size: 13px; text <=> root.macro-name; placeholder-text: "New macro name"; enabled: !root.macro-recording; }
+                                        AppText { text: "SAVED MACROS"; color: #9a918e; font-size: 10px; }
+                                        Rectangle { vertical-stretch: 1; min-height: 0px; max-height: 190px; background: #0b0b0b; border-width: 1px; border-color: #272424; border-radius: 2px;
+                                            ListView {
+                                                x: 1px; y: 1px; width: parent.width - 2px; height: parent.height - 2px;
+                                                vertical-scrollbar-policy: as-needed;
+                                                horizontal-scrollbar-policy: always-off;
+                                                for item[index] in root.macro-names: Rectangle {
+                                                    width: parent.width;
+                                                    height: 30px; background: root.macro-index == index ? #102f50 : row-touch.has-hover ? #1b242d : #151719;
+                                                    Rectangle { x: 0px; width: 2px; height: parent.height; background: root.macro-index == index ? #2478c5 : transparent; }
+                                                    AppText { x: 9px; width: parent.width - 16px; vertical-alignment: center; text: item; color: root.macro-index == index ? #ffffff : #d2d7dd; font-size: 12px; overflow: elide; }
+                                                    row-touch := TouchArea { mouse-cursor: pointer; clicked => { root.select-macro(index); } }
+                                                }
+                                            }
+                                            if root.macro-names.length == 0: AppText { x: 8px; y: 8px; text: "No saved macros"; color: #77716f; font-size: 11px; }
+                                        }
+                                        ActionButton { label: "New macro"; width: 100%; has-icon: true; icon: @image-url("assets/macro-plus.svg"); pressed => { root.new-macro(); } }
+                                        ActionButton { label: "Delete selected"; width: 100%; enabled: root.macro-index >= 0; has-icon: true; icon: @image-url("assets/macro-trash.svg"); pressed => { root.delete-macro(root.macro-index); } }
+                                    }
+                                }
+                                Rectangle {
+                                    horizontal-stretch: 1; background: #111111; border-width: 1px; border-color: #302d2b; border-radius: 3px;
+                                    VerticalLayout { padding: 8px; spacing: 5px;
+                                        AppText { height: 18px; vertical-stretch: 0; text: "EVENT LIST"; color: #f0ecea; font-size: 14px; font-weight: 600; }
+                                        Rectangle { height: 28px; vertical-stretch: 0; background: #292727;
+                                            HorizontalLayout { padding-left: 10px; spacing: 12px;
+                                                AppText { width: 34px; text: "No."; color: #c9c2bf; vertical-alignment: center; font-size: 11px; }
+                                                AppText { width: 82px; text: "TYPE"; color: #c9c2bf; vertical-alignment: center; font-size: 11px; }
+                                                AppText { horizontal-stretch: 1; text: "VALUE · DELAY AFTER"; color: #c9c2bf; vertical-alignment: center; font-size: 11px; }
+                                            }
+                                        }
+                                        Rectangle { vertical-stretch: 1; min-height: 90px; background: #0b0b0b; border-width: 1px; border-color: #272424; border-radius: 2px;
+                                            event-list := ListView {
+                                                x: 1px; y: 1px; width: parent.width - 12px; height: parent.height - 2px;
+                                                vertical-scrollbar-policy: always-off;
+                                                horizontal-scrollbar-policy: always-off;
+                                                for item[index] in root.macro-events: Rectangle {
+                                                    width: parent.width;
+                                                    height: 30px; background: root.macro-event-index == index ? #302018 : event-touch.has-hover ? #211f1e : Math.mod(index, 2) == 0 ? #191919 : #151515;
+                                                    AppText { x: 10px; width: 34px; text: "\{index}"; color: #c9c2bf; vertical-alignment: center; font-size: 12px; }
+                                                    AppText { x: 56px; width: 82px; text: "ACTION"; color: #9f9794; vertical-alignment: center; font-size: 10px; }
+                                                    AppText { x: 140px; width: parent.width - 150px; text: item; color: #e4dedb; vertical-alignment: center; font-size: 12px; overflow: elide; }
+                                                    event-touch := TouchArea { mouse-cursor: pointer; clicked => { root.macro-event-index = index; } }
+                                                }
+                                            }
+                                            Rectangle {
+                                                x: parent.width - 8px; y: 1px; width: 5px; height: parent.height - 2px;
+                                                background: #1a1919; border-radius: 2px;
+                                                Rectangle {
+                                                    x: 0px;
+                                                    width: parent.width;
+                                                    height: max(24px, (parent.height * event-list.visible-height) / max(event-list.content-height, event-list.visible-height));
+                                                    y: event-list.content-height <= event-list.visible-height ? 0px : clamp((-event-list.content-y / (event-list.content-height - event-list.visible-height)) * (parent.height - self.height), 0px, parent.height - self.height);
+                                                    background: event-list.content-height <= event-list.visible-height ? #383433 : #b46747;
+                                                    border-radius: 2px;
+                                                }
+                                                TouchArea {
+                                                    mouse-cursor: pointer;
+                                                    clicked => {
+                                                        let range = max(event-list.content-height - event-list.visible-height, 0px);
+                                                        event-list.content-y = -range * clamp(self.mouse-y / self.height, 0, 1);
+                                                    }
+                                                }
+                                            }
+                                            if root.macro-events.length == 0: VerticalLayout {
+                                                x: (parent.width - 260px) / 2; y: (parent.height - 82px) / 2; width: 260px; height: 82px;
+                                                spacing: 7px;
+                                                HorizontalLayout { height: 16px; spacing: 5px; alignment: center; cross-axis-alignment: center;
+                                                    Rectangle { width: 20px; height: 15px; background: #171819; border-width: 1px; border-color: #75513f; border-radius: 3px; Rectangle { x: 6px; y: 6px; width: 8px; height: 2px; background: #bb7653; border-radius: 1px; } }
+                                                    Rectangle { width: 8px; height: 1px; background: #4b4643; }
+                                                    Rectangle { width: 20px; height: 15px; background: #171819; border-width: 1px; border-color: #393633; border-radius: 3px; Rectangle { x: 6px; y: 6px; width: 8px; height: 2px; background: #77716f; border-radius: 1px; } }
+                                                    Rectangle { width: 8px; height: 1px; background: #4b4643; }
+                                                    Rectangle { width: 20px; height: 15px; background: #171819; border-width: 1px; border-color: #393633; border-radius: 3px; Rectangle { x: 6px; y: 6px; width: 8px; height: 2px; background: #77716f; border-radius: 1px; } }
+                                                }
+                                                AppText { height: 17px; vertical-stretch: 0; text: "No macro events yet"; color: #c9c2bf; font-size: 13px; horizontal-alignment: center; }
+                                                AppText { height: 16px; vertical-stretch: 0; text: "Record keys or add an event below"; color: #77716f; font-size: 11px; horizontal-alignment: center; }
+                                            }
+                                        }
+                                        Rectangle { height: 1px; background: #302d2b; }
+                                        AppText { height: 12px; vertical-stretch: 0; text: "ADD EVENT"; color: #9a918e; font-size: 10px; }
+                                        HorizontalLayout { spacing: 5px;
+                                            ComboBox { width: 96px; model: ["Key chord", "Website", "Software", "Clicks"]; current-value: root.macro-mode; selected(value) => { root.macro-mode = value; } }
+                                            LineEdit { horizontal-stretch: 1; height: 30px; font-family: "Segoe UI"; font-size: 12px; text <=> root.macro-value; placeholder-text: root.macro-mode == "Website" ? "https://…" : root.macro-mode == "Software" ? "Application name" : root.macro-mode == "Clicks" ? "Left click" : "Ctrl+Shift+P"; enabled: !root.macro-recording; }
+                                            ActionButton { label: "Add"; width: 70px; enabled: !root.macro-recording; primary: true; has-icon: true; icon: @image-url("assets/macro-plus.svg"); pressed => { root.add-macro-step(root.macro-mode, root.macro-value, root.macro-delay); } }
+                                        }
+                                        HorizontalLayout { spacing: 5px;
+                                            LineEdit { width: 105px; height: 27px; font-family: "Segoe UI"; font-size: 11px; text <=> root.macro-delay; placeholder-text: "Delay after · ms"; }
+                                            AppText { text: "ms between events"; color: #77716f; font-size: 10px; vertical-alignment: center; }
+                                            Rectangle { horizontal-stretch: 1; }
+                                            ActionButton { label: "Remove"; width: 96px; enabled: root.macro-event-index >= 0; has-icon: true; icon: @image-url("assets/macro-trash.svg"); pressed => { root.remove-macro-event(root.macro-event-index); } }
+                                            ActionButton { label: "Clear list"; width: 94px; enabled: root.macro-events.length > 0; has-icon: true; icon: @image-url("assets/macro-trash.svg"); pressed => { root.clear-macro-events(); } }
+                                        }
+                                    }
+                                }
+                                Rectangle {
+                                width: 238px; background: KohlrauschTheme.panel;
+                                    Rectangle { width: 1px; height: parent.height; background: #302d2b; }
+                                    record-scope := FocusScope {
+                                        key-pressed(event) => {
+                                            if root.macro-recording && event.text != "" {
+                                                root.capture-macro-key((event.modifiers.control ? "CTRL+" : "") + (event.modifiers.shift ? "SHIFT+" : "") + (event.modifiers.alt ? "ALT+" : "") + (event.modifiers.meta ? "META+" : "") + (event.text == " " ? "SPACE" : event.text == "+" ? "PLUS" : event.text));
+                                                accept
+                                            } else { reject }
+                                        }
+                                        VerticalLayout { padding-left: 14px; padding-right: 14px; padding-top: 12px; padding-bottom: 8px; spacing: 6px;
+                                            ActionButton { label: root.macro-recording ? "Stop recording" : "Start recording"; width: 100%; active: root.macro-recording; has-icon: true; icon: root.macro-recording ? @image-url("assets/macro-stop.svg") : @image-url("assets/macro-record.svg"); pressed => { root.macro-recording = !root.macro-recording; root.macro-recording-changed(root.macro-recording); if root.macro-recording { record-scope.focus(); } } }
+                                            AppText { text: "KEY CAPTURE"; color: #f0ecea; font-size: 13px; font-weight: 600; }
+                                            AppText { text: "Records key presses only while Kohlrausch is focused."; color: #908987; font-size: 10px; wrap: word-wrap; }
+                                            Rectangle { height: 1px; background: #302d2b; }
+                                            AppText { text: "TIME DELAY"; color: #f0ecea; font-size: 13px; font-weight: 600; }
+                                            ComboBox { model: ["Recorded delay", "Fixed delay"]; current-value: root.macro-timing; selected(value) => { root.macro-timing = value; } }
+                                            Rectangle {
+                                                height: 29px;
+                                                background: transparent;
+                                                if root.macro-timing == "Fixed delay": LineEdit { width: parent.width; height: parent.height; font-family: "Segoe UI"; font-size: 12px; text <=> root.macro-delay; placeholder-text: "Fixed delay in ms"; }
+                                            }
+                                            AppText { text: "LOOP SETTING"; color: #f0ecea; font-size: 13px; font-weight: 600; }
+                                            ComboBox { model: ["Once", "Until stop", "Until any click", "Loop count"]; current-value: root.macro-loop; selected(value) => { root.macro-loop = value; } }
+                                            Rectangle {
+                                                height: 29px;
+                                                background: transparent;
+                                                if root.macro-loop == "Loop count": LineEdit { width: parent.width; height: parent.height; font-family: "Segoe UI"; font-size: 12px; text <=> root.macro-loop-count; placeholder-text: "Number of loops"; }
+                                            }
+                                            if root.macro-error != "": AppText { text: root.macro-error; color: #ff8b72; font-size: 10px; wrap: word-wrap; }
+                                            AppText { text: root.macro-preview; color: #99918e; font-size: 10px; wrap: word-wrap; }
+                                            ActionButton { label: "Save macro"; width: 100%; enabled: !root.macro-recording; primary: true; has-icon: true; icon: @image-url("assets/macro-save.svg"); pressed => { root.save-macro(root.macro-name, root.macro-timing, root.macro-delay, root.macro-loop, root.macro-loop-count); } }
+                                        }
+                                    }
+                                }
+                            }
+                                }
+                            }
+                            }
+                        if root.active-section == "Device settings": VerticalLayout {
+                            vertical-stretch: 1;
+                            spacing: 6px;
+                            AppText { text: "Device settings"; color: #f0ecea; font-size: 24px; }
+                            AppText { text: "NO DEVICE HANDSHAKE · selecting a board or port does not establish a connection."; color: #d2cbc8; font-size: 13px; }
+                            AppText { text: "SELECT BOARD"; color: #948b88; font-size: 11px; }
+                            ComboBox { model: root.board-options; current-index <=> root.board-index; selected(value) => { root.board-selected(value); } }
+                            AppText { text: "SERIAL PORT"; color: #948b88; font-size: 11px; }
+                            HorizontalLayout { spacing: 8px;
+                                ComboBox { model: root.port-options; enabled: root.ports-available; current-index <=> root.port-index; selected(value) => { root.port-selected(value); } }
+                                ActionButton { label: "Refresh"; width: 88px; pressed => { root.refresh-ports(); } }
+                            }
+                            AppText { text: root.port-status; color: #aaa3a0; font-size: 12px; }
+                            Rectangle { height: 1px; background: #393432; }
+                            AppText { text: "Board revision  ·  provisional"; color: #d2cbc8; font-size: 13px; }
+                            AppText { text: "Matrix rows, columns, GPIO assignments, diode behavior and OLED controller are not verified."; color: #aaa3a0; font-size: 12px; wrap: word-wrap; }
+                            Rectangle { height: 1px; background: #393432; }
+                            AppText { text: "OLED PREVIEW · SIMULATED"; color: #ff875f; font-size: 12px; }
+                            AppText { text: "Controller, resolution and I²C address await hardware verification."; color: #aaa3a0; font-size: 12px; }
+                            HorizontalLayout { spacing: 12px;
+                                Rectangle { width: 300px; height: 92px; background: #111111; border-width: 1px; border-color: #3b3735; border-radius: 3px;
+                                    VerticalLayout { padding: 10px; spacing: 5px; AppText { text: "LAYER  \{root.active-layer}"; color: #e2dcda; font-size: 11px; }
+                                        HorizontalLayout { spacing: 5px; for number in [1, 2, 3, 4]: Rectangle { width: 42px; height: 30px; background: number == root.active-layer ? #a83f20 : #242222; border-width: number == root.active-layer ? 1px : 0px; border-color: #ff9677; AppText { text: "\{number}"; horizontal-alignment: center; vertical-alignment: center; color: number == root.active-layer ? #fff4ee : #aaa3a0; } } }
+                                        AppText { text: "Layer display · 5 seconds"; color: #9a9390; font-size: 10px; }
+                                    }
+                                }
+                                Rectangle { width: 300px; height: 92px; background: #111111; border-width: 1px; border-color: #3b3735; border-radius: 3px;
+                                    VerticalLayout { padding: 10px; spacing: 8px; AppText { text: "KOHLRAUSCH KONFIG"; color: #f0ecea; font-size: 15px; font-weight: 700; vertical-alignment: center; }
+                                        AppText { text: "Brand display · 5 seconds"; color: #9a9390; font-size: 10px; }
+                                    }
+                                }
+                            }
+                            AppText { text: "Layer change restarts the 10-second display cycle."; color: #aaa3a0; font-size: 12px; }
+                        }
+                        if root.active-section == "About & license": VerticalLayout {
+                            vertical-stretch: 1;
+                            spacing: 12px;
+                            alignment: LayoutAlignment.start;
+                            AppText { text: "About"; color: #f0ecea; font-size: 28px; font-weight: 600; }
+                            Rectangle {
+                                horizontal-stretch: 1; height: 86px;
+                                background: #202123; border-width: 1px; border-color: #303133; border-radius: 4px;
+                                HorizontalLayout {
+                                    padding-left: 18px; padding-right: 20px; spacing: 14px; cross-axis-alignment: center;
+                                    Image { width: 48px; height: 48px; source: @image-url("assets/visrodeck_instruments.png"); image-fit: contain; }
+                                    VerticalLayout {
+                                        spacing: 4px;
+                                        AppText { text: "KOHLRAUSCH KONFIG"; color: #f3efed; font-size: 19px; font-weight: 600; }
+                                        AppText { text: "3×3 MACROPAD  ·  VERSION 0.5.4"; color: #aaa3a0; font-size: 12px; }
+                                    }
+                                    Rectangle { horizontal-stretch: 1; }
+                                    AppText { text: "Visrodeck Technologies"; color: #c9c3c0; font-size: 13px; vertical-alignment: center; }
+                                }
+                            }
+                            Rectangle {
+                                horizontal-stretch: 1; background: #202123; border-width: 1px; border-color: #303133; border-radius: 4px;
+                                VerticalLayout {
+                                    spacing: 0px;
+                                    Rectangle {
+                                        height: 54px; background: about-product-touch.has-hover ? #292a2c : transparent;
+                                        HorizontalLayout {
+                                            padding-left: 18px; padding-right: 18px; spacing: 12px; cross-axis-alignment: center;
+                                            AppText { text: "ⓘ"; color: #d0cbc8; font-size: 19px; }
+                                            AppText { text: "Product information"; color: #f0ecea; font-size: 15px; horizontal-stretch: 1; }
+                                            AppText { text: root.about-product-open ? "−" : "+"; color: #c9c3c0; font-size: 18px; }
+                                        }
+                                        about-product-touch := TouchArea { mouse-cursor: pointer; clicked => { root.about-product-open = !root.about-product-open; } }
+                                    }
+                                    if root.about-product-open: VerticalLayout {
+                                        padding-left: 58px; padding-right: 20px; padding-bottom: 14px; spacing: 0px;
+                                        Rectangle { height: 1px; background: #343537; }
+                                        AboutInfoRow { label: "Name"; value: "Kohlrausch Konfig"; }
+                                        Rectangle { height: 1px; background: #343537; }
+                                        AboutInfoRow { label: "Version"; value: "0.5.4"; }
+                                        Rectangle { height: 1px; background: #343537; }
+                                        AboutInfoRow { label: "Company"; value: "Visrodeck Technologies"; }
+                                        Rectangle { height: 1px; background: #343537; }
+                                        AboutInfoRow { label: "Packaged by"; value: "Emtypyie.Cli <Emtypyie&Co>"; }
+                                    }
+                                }
+                            }
+                            Rectangle {
+                                horizontal-stretch: 1; background: #202123; border-width: 1px; border-color: #303133; border-radius: 4px;
+                                VerticalLayout {
+                                    spacing: 0px;
+                                    Rectangle {
+                                        height: 54px; background: about-license-touch.has-hover ? #292a2c : transparent;
+                                        HorizontalLayout {
+                                            padding-left: 18px; padding-right: 18px; spacing: 12px; cross-axis-alignment: center;
+                                            AppText { text: "ⓘ"; color: #d0cbc8; font-size: 19px; }
+                                            AppText { text: "License"; color: #f0ecea; font-size: 15px; horizontal-stretch: 1; }
+                                            AppText { text: root.about-license-open ? "−" : "+"; color: #c9c3c0; font-size: 18px; }
+                                        }
+                                        about-license-touch := TouchArea { mouse-cursor: pointer; clicked => { root.about-license-open = !root.about-license-open; } }
+                                    }
+                                    if root.about-license-open: VerticalLayout {
+                                        padding-left: 58px; padding-right: 20px; padding-bottom: 14px; spacing: 0px;
+                                        Rectangle { height: 1px; background: #343537; }
+                                        AboutInfoRow { label: "License"; value: "MIT"; }
+                                        AppText { text: "Kohlrausch Konfig is distributed under the MIT License."; color: #aaa3a0; font-size: 12px; wrap: word-wrap; }
+                                    }
+                                }
+                            }
+                        }
+                        if root.active-section == "Config Studio": VerticalLayout {
+                            horizontal-stretch: 1;
+                            vertical-stretch: 1;
+                            spacing: 8px;
+                            HorizontalLayout {
+                                height: 34px; spacing: 8px;
+                                AppText { text: "CONFIG"; color: #f0ecea; font-size: 15px; font-weight: 600; vertical-alignment: center; }
+                                Rectangle { horizontal-stretch: 1; }
+                                ActionButton { label: "Import file"; width: 94px; pressed => { root.import-config-file(); } }
+                                ActionButton { label: "Import folder"; width: 106px; pressed => { root.import-config-folder(); } }
+                            }
+                            HorizontalLayout {
+                                horizontal-stretch: 1; vertical-stretch: 1; min-height: 260px; spacing: 10px;
+                                Rectangle {
+                                    width: 248px; background: KohlrauschTheme.panel; border-width: 1px; border-color: KohlrauschTheme.border; border-radius: 5px;
+                                    VerticalLayout {
+                                        spacing: 0px;
+                                        Rectangle {
+                                            height: 42px; background: #171717;
+                                            HorizontalLayout {
+                                                padding-left: 12px; padding-right: 12px; spacing: 8px; cross-axis-alignment: center;
+                                                AppText { text: "CONFIG FILES"; color: #e4dedb; font-size: 11px; font-weight: 600; vertical-alignment: center; }
+                                                Rectangle { horizontal-stretch: 1; }
+                                                AppText { text: "LOCAL"; color: #b6aaa3; font-size: 9px; vertical-alignment: center; }
+                                            }
+                                        }
+                                        Rectangle { height: 26px; background: #131313;
+                                            AppText { x: 12px; text: "APPDATA  /  KOHLRAUSCH  /  PROFILES"; color: #89959e; font-size: 9px; vertical-alignment: center; }
+                                        }
+                                        Rectangle { height: 1px; background: #302d2b; }
+                                        ListView {
+                                            vertical-stretch: 1; horizontal-scrollbar-policy: always-off; vertical-scrollbar-policy: as-needed;
+                                            for item[index] in root.config-files: Rectangle {
+                                                width: parent.width;
+                                                height: root.config-file-kinds[index] == 0 ? 34px : 31px;
+                                                background: root.config-file-kinds[index] != 0 && root.selected-config-file == index ? #102f50 : file-row.has-hover ? #1b242d : transparent;
+                                                Rectangle { x: 0px; width: 2px; height: parent.height; background: root.config-file-kinds[index] != 0 && root.selected-config-file == index ? #2478c5 : transparent; }
+                                                if root.config-file-kinds[index] == 0: Rectangle {
+                                                    x: 12px; y: 0px; width: 15px; height: parent.height; background: transparent;
+                                                    Rectangle { x: 3px; y: 14px; width: 5px; height: 1.5px; background: #b2aaa6; transform-rotation: 45deg; }
+                                                    Rectangle { x: 6px; y: 14px; width: 5px; height: 1.5px; background: #b2aaa6; transform-rotation: -45deg; }
+                                                }
+                                                if root.config-file-kinds[index] == 0: ProfileFolderIcon { x: 32px; y: (parent.height - self.height) / 2; }
+                                                if root.config-file-kinds[index] == 0: AppText {
+                                                    x: 55px; width: parent.width - 96px; text: item; color: #e3ddda; font-size: 12px; font-weight: 600; vertical-alignment: center; overflow: elide;
+                                                }
+                                                if root.config-file-kinds[index] == 0: AppText {
+                                                    x: parent.width - 60px; width: 48px; text: "4 LAYERS"; color: #8997a2; font-size: 8px; horizontal-alignment: right; vertical-alignment: center;
+                                                }
+                                                if root.config-file-kinds[index] != 0: Rectangle { x: 35px; y: 0px; width: 1px; height: parent.height; background: #34302e; }
+                                                if root.config-file-kinds[index] != 0: Rectangle { x: 35px; y: parent.height / 2; width: 10px; height: 1px; background: #34302e; }
+                                                if root.config-file-kinds[index] != 0: ConfigFileIcon { x: 48px; y: (parent.height - self.height) / 2; glyph: root.config-file-kinds[index] == 1 ? "P" : "{}"; }
+                                                if root.config-file-kinds[index] != 0: AppText {
+                                                    x: 70px; width: parent.width - 80px; text: item;
+                                                    color: root.selected-config-file == index ? #ffffff : #d2d7dd;
+                                                    font-family: root.config-file-kinds[index] == 1 ? "Segoe UI" : "Consolas";
+                                                    font-size: 11px; vertical-alignment: center; overflow: elide;
+                                                }
+                                                file-row := TouchArea { mouse-cursor: pointer; clicked => { if root.config-file-kinds[index] != 0 { root.select-config-file(index); } } }
+                                            }
+                                        }
+                                    }
+                                }
+                                VerticalLayout {
+                                    horizontal-stretch: 1; vertical-stretch: 1; spacing: 6px;
+                                    HorizontalLayout {
+                                        height: 28px;
+                                        AppText { text: "\{root.profile-name}  /  \{root.selected-config-label}"; color: #c9c3c0; font-size: 12px; vertical-alignment: center; }
+                                        Rectangle { horizontal-stretch: 1; }
+                                    }
+                                    JsonCodeEditor { text <=> root.raw-config; highlighted-text: root.config-highlight; horizontal-stretch: 1; vertical-stretch: 1; min-height: 220px; edited(text) => { root.config-source-edited(text); } }
+                                    HorizontalLayout {
+                                        height: 34px;
+                                        AppText { text: root.selected-config-label == "profile.json" ? "Profile manifest · changes are validated when saved" : "Layer configuration · changes are validated when saved"; color: #8997a2; font-size: 11px; vertical-alignment: center; }
+                                        Rectangle { horizontal-stretch: 1; }
+                                        ActionButton { label: "Save layer"; width: 112px; active: true; pressed => { root.save-raw-config(root.raw-config); } }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Rectangle {
+                horizontal-stretch: 1;
+                height: 52px; background: #171717;
+                VerticalLayout {
+                    padding-left: 20px; padding-right: 20px; padding-top: 9px; padding-bottom: 9px;
+                    HorizontalLayout {
+                        height: 34px; spacing: 12px;
+                        AppText { text: root.status-message; color: #b2aaa7; font-size: 12px; vertical-alignment: center; }
+                        Rectangle { horizontal-stretch: 1; }
+                        ActionButton { label: "FLASH"; width: 104px; enabled: false; primary: true; pressed => { root.flash-request(); } }
+                        AppText { text: "UNAVAILABLE"; color: #796e80; font-size: 10px; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            x: 202px; y: 164px; width: min(340px, parent.width - 218px);
+            height: root.profiles-popup-open ? min(196px + min(max(root.profile-labels.length * 44px + 8px, 68px), 148px) + (root.profile-delete-confirm ? 18px : 0px), parent.height - 218px) : 0px;
+            opacity: root.profiles-popup-open ? 1 : 0;
+            visible: root.profiles-popup-open || self.opacity > 0.01;
+            clip: true;
+            background: #121416; border-width: root.profiles-popup-open ? 1px : 0px; border-color: #3b4145; border-radius: 6px;
+            animate height { duration: 190ms; }
+            animate opacity { duration: 150ms; }
+            VerticalLayout {
+                visible: root.profiles-popup-open;
+                padding: 16px; spacing: 8px;
+                    HorizontalLayout {
+                        height: 30px; spacing: 8px; cross-axis-alignment: center;
+                        AppText { text: "Profiles"; color: #f0f2f3; font-size: 19px; font-weight: 600; }
+                        Rectangle { horizontal-stretch: 1; }
+                        ActionButton { label: "Close"; width: 64px; height: 29px; pressed => { root.profiles-popup-open = false; root.profile-delete-confirm = false; } }
+                    }
+                    AppText { text: "Choose an active profile, or create one."; color: #9ba2a7; font-size: 12px; }
+                    Rectangle {
+                        height: min(max(root.profile-labels.length * 44px + 8px, 68px), 148px); vertical-stretch: 0;
+                        background: #0b0c0d; border-width: 1px; border-color: #282d30; border-radius: 4px; clip: true;
+                        ListView {
+                            x: 5px; y: 5px; width: parent.width - 10px; height: parent.height - 10px;
+                            vertical-scrollbar-policy: as-needed; horizontal-scrollbar-policy: always-off;
+                            for item[index] in root.profile-labels: ActionButton {
+                                width: parent.width; height: 38px; label: item;
+                                active: root.profile-selected-index == index;
+                                pressed => { root.profile-selected-index = index; root.profile-delete-confirm = false; }
+                            }
+                        }
+                        if root.profile-labels.length == 0: AppText { x: 12px; y: 12px; text: "No profiles found"; color: #8b9297; font-size: 12px; }
+                    }
+                    HorizontalLayout {
+                        height: 34px; spacing: 8px;
+                        LineEdit { horizontal-stretch: 1; height: 34px; font-family: "Segoe UI"; font-size: 12px; text <=> root.new-profile-name; placeholder-text: "New profile name"; }
+                        ActionButton { label: "Create"; width: 88px; height: 34px; primary: true; has-icon: true; icon: @image-url("assets/macro-plus.svg"); pressed => { root.create-profile(root.new-profile-name); } }
+                    }
+                    AppText { text: "Deletion moves profile files to a recoverable archive."; color: #858d92; font-size: 10px; }
+                    if root.profile-delete-confirm: VerticalLayout {
+                        spacing: 6px;
+                        AppText { text: "Archive this profile? It will stop appearing in the profile list."; color: #e5c7bd; font-size: 11px; wrap: word-wrap; }
+                        HorizontalLayout { height: 34px; spacing: 8px;
+                            ActionButton { label: "Archive profile"; width: 128px; height: 34px; pressed => { if root.profile-selected-index >= 0 && root.profile-selected-index < root.profile-ids.length { root.delete-profile(root.profile-ids[root.profile-selected-index]); } } }
+                            ActionButton { label: "Keep profile"; width: 112px; height: 34px; active: true; pressed => { root.profile-delete-confirm = false; } }
+                        }
+                    }
+                    if !root.profile-delete-confirm: HorizontalLayout {
+                        height: 34px; spacing: 8px;
+                        ActionButton { label: "Switch to selected"; width: 150px; height: 34px; primary: true; enabled: root.profile-selected-index >= 0 && root.profile-selected-index < root.profile-ids.length; pressed => { if root.profile-selected-index >= 0 && root.profile-selected-index < root.profile-ids.length { root.switch-profile(root.profile-ids[root.profile-selected-index]); } } }
+                        ActionButton { label: "Delete"; width: 82px; height: 34px; enabled: root.profile-selected-index >= 0 && root.profile-selected-index < root.profile-ids.length && root.profile-labels.length > 1; pressed => { root.profile-delete-confirm = true; } }
+                    }
+            }
+        }
+    }
+}
+
+
+

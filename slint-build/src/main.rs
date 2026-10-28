@@ -1171,7 +1171,7 @@ mod tests {
         assert_eq!(port_choices(&[]), vec![slint::SharedString::from("No serial ports found")]);
     }
     #[test] fn checked_in_profile_uses_the_canonical_keymap_schema() {
-        let sample: Profile = serde_json::from_str(include_str!("../profiles/default.json")).unwrap();
+        let sample: Profile =         serde_json::from_str(include_str!("../../profiles/default.json")).unwrap();
         assert_eq!(sample.validate(), Ok(()));
         assert_eq!(sample.assignments.len(), 36);
     }

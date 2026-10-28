@@ -1,0 +1,7 @@
+Source: C:\Users\workf\OneDrive\Documents\Kohlrausch_Tray_Fit_Check.FCStd
+Revision: Kohlrausch_Tray_Fit_Check.FCStd (2026-10-24)
+Solids: 96
+B-rep faces: 14418
+Tessellated facets before decimation: 205756
+Facets after decimation: 30862
+Linear deflection: 0.5 mm; decimation tolerance: 0.2 mm

@@ -107,7 +107,7 @@ pub fn usb_position_mm() -> (f32, f32) {
     (position.x, position.y)
 }
 
-pub const BOARD_JSON: &str = include_str!("../packages/board-definitions/boards/kohlrausch-rp2040.json");
+pub const BOARD_JSON: &str =     include_str!("../../packages/board-definitions/boards/kohlrausch-rp2040.json");
 
 #[cfg(test)]
 mod tests {

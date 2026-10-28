@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kohlrausch Konfig</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="window-header" data-tauri-drag-region>
+      <img class="brand-logo" src="assets/visrodeck_instruments.png" alt="Visrodeck" data-tauri-drag-region>
+      <span class="brand-title" data-tauri-drag-region>KOHLRAUSCH KONFIG</span>
+      <span class="brand-sub" data-tauri-drag-region>3×3 MACROPAD</span>
+      <span class="spacer" data-tauri-drag-region></span>
+      <span class="conn-dot">●</span>
+      <span class="conn-status">OFFLINE</span>
+      <div class="win-buttons">
+        <button class="win-btn" data-win="min" title="Minimize">—</button>
+        <button class="win-btn" data-win="max" title="Maximize">□</button>
+        <button class="win-btn win-close" data-win="close" title="Close">×</button>
+      </div>
+    </header>
+
+    <div class="body-row">
+      <aside class="sidebar">
+        <div class="sidebar-kicker">WORKSPACE</div>
+        <button class="nav-item active" data-nav="Keymaps">Keymaps</button>
+        <button class="nav-item" data-nav="Macros">Macros</button>
+        <button class="nav-item" data-nav="Profiles">Profiles</button>
+        <button class="nav-item" data-nav="Device settings">Device settings</button>
+        <button class="nav-item" data-nav="Config Studio">Config Studio</button>
+        <button class="nav-item" data-nav="About & license">About</button>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-kicker profile">ACTIVE PROFILE</div>
+        <div class="sidebar-profile" id="active-profile-name">Default</div>
+        <div style="height:8px"></div>
+      </aside>
+
+      <main class="content" id="content">
+        <!-- ============ KEYMAPS ============ -->
+        <section class="section section-keymaps" data-section="Keymaps">
+          <div class="km-header">
+            <h1>Keymap editor</h1>
+            <div class="spacer"></div>
+            <div class="layer-buttons">
+              <button class="action-btn layer-btn active" data-layer="1" style="width:64px;height:30px">LAYER 1</button>
+              <button class="action-btn layer-btn" data-layer="2" style="width:64px;height:30px">LAYER 2</button>
+              <button class="action-btn layer-btn" data-layer="3" style="width:64px;height:30px">LAYER 3</button>
+              <button class="action-btn layer-btn" data-layer="4" style="width:64px;height:30px">LAYER 4</button>
+            </div>
+          </div>
+          <div class="km-sub">Select a switch to edit its action.</div>
+          <div class="km-body">
+            <div class="scene-wrap" id="scene-wrap">
+              <div class="scene-frame entering" id="scene-frame">
+                <div class="scene-inner" id="scene-inner">
+                  <canvas class="scene-canvas" id="scene-canvas" width="840" height="540"></canvas>
+                  <svg class="scene-overlay" viewBox="0 0 840 540" preserveAspectRatio="none">
+                    <path id="path-lyr-1" d="M 309 187 L 270 140 L 198 140" fill="none" stroke="#287fc055" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+                    <path id="path-lyr-2" d="M 309 187 L 270 140 L 198 140" fill="none" stroke="#78b5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+                    <path id="path-rp-1" d="M 408 116 L 442 66 L 515 66" fill="none" stroke="#287fc055" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+                    <path id="path-rp-2" d="M 408 116 L 442 66 L 515 66" fill="none" stroke="#78b5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+                    <path id="path-keys-1" d="M 512 205 L 560 150 L 650 150" fill="none" stroke="#287fc055" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+                    <path id="path-keys-2" d="M 512 205 L 560 150 L 650 150" fill="none" stroke="#78b5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+                  </svg>
+                  <div class="callout" id="callout-lyr" style="left:68px;top:121px">
+                    <div class="c-title">LYR SWITCH</div><div class="c-detail">DEDICATED INPUT</div>
+                  </div>
+                  <div class="callout" id="callout-rp" style="left:531px;top:47px">
+                    <div class="c-title">RP2040</div><div class="c-detail">DEVICE PORT</div>
+                  </div>
+                  <div class="callout" id="callout-keys" style="left:704px;top:131px">
+                    <div class="c-title">KEY ARRAY</div><div class="c-detail">9 PROGRAMMABLE</div>
+                  </div>
+                  <div class="selection-box" id="selection-box"></div>
+                  <div class="hover-card" id="hover-card">
+                    <div class="h-title" id="hover-title">KEY 1.1 · LAYER 1</div>
+                    <div class="h-line" id="hover-physical">Physical 3.1</div>
+                    <div class="h-line dim" id="hover-matrix">Matrix unverified</div>
+                    <div class="h-line dim" id="hover-gpio">GPIO unverified</div>
+                    <div class="h-line action" id="hover-action">Action Unassigned</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="km-divider"></div>
+            <div class="inspector">
+              <div class="insp-kicker">ACTION INSPECTOR</div>
+              <div class="insp-title" id="insp-title">1.1&nbsp;&nbsp;/&nbsp;&nbsp;LAYER 1</div>
+              <div class="hr"></div>
+              <div class="insp-label">LOGICAL KEY ID</div>
+              <div class="insp-value" id="insp-key-id">logical-1-1</div>
+              <div class="insp-label">PHYSICAL SWITCH&nbsp; · &nbsp;MATRIX/GPIO UNVERIFIED</div>
+              <div class="insp-value medium" id="insp-physical">3.1&nbsp; · &nbsp;key-3-1</div>
+              <div class="hr"></div>
+              <div class="insp-label">CURRENT ASSIGNMENT</div>
+              <div class="insp-assignment" id="insp-assignment">Unassigned</div>
+              <div class="insp-label">ASSIGN ACTION</div>
+              <div class="tabs" id="insp-tabs">
+                <button class="insp-tab active" data-kind="keyChord">Keys</button>
+                <button class="insp-tab" data-kind="macro">Macro</button>
+                <button class="insp-tab" data-kind="website">Web</button>
+                <button class="insp-tab" data-kind="application">App</button>
+                <button class="insp-tab" data-kind="mouseAction">Clicks</button>
+              </div>
+              <div class="editor-pane" data-pane="keyChord">
+                <div class="shortcut-display" id="shortcut-display">No shortcut captured</div>
+                <button class="action-btn primary w-full" id="capture-shortcut" style="height:32px">Capture shortcut</button>
+                <div class="editor-row" style="height:28px">
+                  <button class="action-btn" id="clear-shortcut" style="width:80px;height:28px">Clear</button>
+                  <button class="action-btn" id="preview-shortcut" style="width:90px;height:28px">Preview</button>
+                  <span class="hint">No input sent</span>
+                </div>
+              </div>
+              <div class="editor-pane hidden" data-pane="macro">
+                <select class="text-input" id="inspector-macro">
+                  <option value="">No saved macros</option>
+                </select>
+                <div class="hint" id="macro-detail">No saved macros</div>
+                <button class="action-btn w-full" id="open-macro-editor">Open macro editor</button>
+              </div>
+              <div class="editor-pane hidden" data-pane="website">
+                <input class="text-input" id="website-url" placeholder="https://example.com">
+                <input class="text-input" id="website-label" placeholder="Label (optional)">
+                <div class="hint">HTTP or HTTPS only · opens when host support exists</div>
+              </div>
+              <div class="editor-pane hidden" data-pane="application">
+                <input class="text-input" id="app-name" placeholder="Application name" style="height:29px">
+                <input class="text-input" id="app-path" placeholder="Path or application ID (optional)" style="height:29px">
+                <input class="text-input" id="app-args" placeholder='Arguments as JSON array, e.g. ["--new-window"]' style="height:29px">
+                <div class="hint">Manual entry · launch support is not enabled</div>
+              </div>
+              <div class="editor-pane hidden" data-pane="mouseAction">
+                <select class="text-input" id="mouse-kind">
+                  <option>Left click</option><option>Right click</option><option>Double click</option><option>Scroll up</option><option>Scroll down</option>
+                </select>
+                <div class="hint">Coordinates are not configured. This saves a named mock action only.</div>
+              </div>
+              <div class="insp-error hidden" id="insp-error"></div>
+              <div class="insp-save-state" id="insp-save-state">Saved assignment · local profile</div>
+              <div class="editor-row">
+                <button class="action-btn active" id="save-action" style="width:76px">Save</button>
+                <button class="action-btn" id="cancel-action" style="width:76px">Cancel</button>
+                <button class="action-btn" id="clear-action" style="width:68px">Clear</button>
+              </div>
+              <div class="spacer" style="flex:1 1 auto"></div>
+              <div class="hint">Changes stay in this profile. Host actions are not executed.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ MACROS ============ -->
+        <section class="section section-macros hidden" data-section="Macros">
+          <div class="macros-body">
+            <div class="macros-main">
+              <div class="macros-head">
+                <h1>Macro Editor</h1>
+                <div class="spacer"></div>
+                <span class="macros-state" id="macro-recording-state">LOCAL MACRO LIBRARY</span>
+              </div>
+              <div class="macros-desc">Capture keystrokes in this window or assemble events manually. Saved macros are not executed.</div>
+              <div class="macros-cols">
+                <div class="macro-list-panel">
+                  <div class="muted-label">MACRO NAME</div>
+                  <input class="text-input" id="macro-name" placeholder="New macro name" style="height:32px;font-size:13px">
+                  <div class="muted-label">SAVED MACROS</div>
+                  <div class="macro-list" id="macro-list">
+                    <div class="macro-empty">No saved macros</div>
+                  </div>
+                  <button class="action-btn w-full" id="new-macro">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="#dce5eb" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    New macro
+                  </button>
+                  <button class="action-btn w-full" id="delete-macro" disabled>
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M4.5 6h11M8 6V4.5h4V6m2.4 0-.7 10H6.3L5.6 6m2.7 2.5v5m3.4-5v5" stroke="#cdd4d9" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Delete selected
+                  </button>
+                </div>
+
+                <div class="macro-events-panel">
+                  <div class="macro-events-title">EVENT LIST</div>
+                  <div class="event-header">
+                    <span class="col-no">No.</span><span class="col-type">TYPE</span><span class="col-value">VALUE · DELAY AFTER</span>
+                  </div>
+                  <div class="event-list" id="event-list">
+                    <div class="event-empty">
+                      <div class="thumbs">
+                        <span class="mini-key hot"></span><span class="mini-sep"></span>
+                        <span class="mini-key"></span><span class="mini-sep"></span>
+                        <span class="mini-key"></span>
+                      </div>
+                      <div class="e-title">No macro events yet</div>
+                      <div class="e-sub">Record keys or add an event below</div>
+                    </div>
+                  </div>
+                  <div class="hr"></div>
+                  <div class="muted-label" style="height:12px">ADD EVENT</div>
+                  <div class="macro-add-row">
+                    <select class="text-input combo" id="macro-mode">
+                      <option>Key chord</option><option>Website</option><option>Software</option><option>Clicks</option>
+                    </select>
+                    <input class="text-input" id="macro-value" placeholder="Ctrl+Shift+P">
+                    <button class="action-btn primary" id="add-event" style="width:70px">
+                      <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="#dce5eb" stroke-width="1.8" stroke-linecap="round"/></svg>
+                      Add
+                    </button>
+                  </div>
+                  <div class="macro-delay-row">
+                    <input class="text-input" id="macro-delay" placeholder="Delay after · ms" value="0">
+                    <span class="hint">ms between events</span>
+                    <span class="spacer"></span>
+                    <button class="action-btn" id="remove-event" disabled style="width:96px">
+                      <svg viewBox="0 0 20 20" fill="none"><path d="M4.5 6h11M8 6V4.5h4V6m2.4 0-.7 10H6.3L5.6 6m2.7 2.5v5m3.4-5v5" stroke="#cdd4d9" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Remove
+                    </button>
+                    <button class="action-btn" id="clear-events" disabled style="width:94px">
+                      <svg viewBox="0 0 20 20" fill="none"><path d="M4.5 6h11M8 6V4.5h4V6m2.4 0-.7 10H6.3L5.6 6m2.7 2.5v5m3.4-5v5" stroke="#cdd4d9" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Clear list
+                    </button>
+                  </div>
+                </div>
+
+                <div class="macro-record-panel">
+                  <button class="action-btn w-full" id="toggle-record">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.25" stroke="#e58a70" stroke-width="1.8"/><circle cx="10" cy="10" r="3.1" fill="#e58a70"/></svg>
+                    Start recording
+                  </button>
+                  <div class="section-title">KEY CAPTURE</div>
+                  <div class="hint">Records key presses only while Kohlrausch is focused.</div>
+                  <div class="hr"></div>
+                  <div class="section-title">TIME DELAY</div>
+                  <select class="text-input combo" id="macro-timing">
+                    <option>Recorded delay</option><option>Fixed delay</option>
+                  </select>
+                  <input class="text-input hidden" id="macro-fixed-delay" placeholder="Fixed delay in ms" style="height:29px">
+                  <div class="section-title">LOOP SETTING</div>
+                  <select class="text-input combo" id="macro-loop">
+                    <option>Once</option><option>Until stop</option><option>Until any click</option><option>Loop count</option>
+                  </select>
+                  <input class="text-input hidden" id="macro-loop-count" placeholder="Number of loops" style="height:29px">
+                  <div class="insp-error hidden" id="macro-error"></div>
+                  <div class="hint" id="macro-preview">No actions saved</div>
+                  <button class="action-btn primary w-full" id="save-macro">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M4 3.5h10l2.5 2.6v10.4H3.5v-13H4Z" stroke="#e5edf2" stroke-width="1.35" stroke-linejoin="round"/><path d="M6.5 3.8v4h6v-4M6.5 16v-5h7v5" stroke="#e5edf2" stroke-width="1.25" stroke-linejoin="round"/></svg>
+                    Save macro
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ DEVICE SETTINGS ============ -->
+        <section class="section section-device hidden" data-section="Device settings">
+          <div class="eyebrow">WORKSPACE&nbsp; / &nbsp;DEVICE SETTINGS&nbsp; &nbsp;·&nbsp; &nbsp;<span class="profile-inline">Default</span></div>
+          <div class="device-title">Device settings</div>
+          <div class="device-sub">NO DEVICE HANDSHAKE · selecting a board or port does not establish a connection.</div>
+          <div class="device-label">SELECT BOARD</div>
+          <select class="text-input" id="board-select" style="height:30px">
+            <option>Kohlrausch RP2040 · Rev A (provisional)</option>
+          </select>
+          <div class="device-label">SERIAL PORT</div>
+          <div class="device-row">
+            <select class="text-input combo" id="port-select" disabled>
+              <option>No serial ports</option>
+            </select>
+            <button class="action-btn" id="refresh-ports" style="width:88px">Refresh</button>
+          </div>
+          <div class="device-status" id="port-status">No device connection</div>
+          <div class="hr"></div>
+          <div class="device-sub" style="font-size:13px">Board revision&nbsp; · &nbsp;provisional</div>
+          <div class="device-note">Matrix rows, columns, GPIO assignments, diode behavior and OLED controller are not verified.</div>
+          <div class="hr"></div>
+          <div class="device-warn">OLED PREVIEW · SIMULATED</div>
+          <div class="device-note">Controller, resolution and I²C address await hardware verification.</div>
+          <div class="oled-row">
+            <div class="oled-card">
+              <div class="oled-title">LAYER&nbsp; <span id="oled-layer">1</span></div>
+              <div class="oled-layers">
+                <div class="oled-layer active">1</div>
+                <div class="oled-layer">2</div>
+                <div class="oled-layer">3</div>
+                <div class="oled-layer">4</div>
+              </div>
+              <div class="oled-caption">Layer display · 5 seconds</div>
+            </div>
+            <div class="oled-card">
+              <div class="oled-brand">KOHLRAUSCH KONFIG</div>
+              <div class="oled-caption">Brand display · 5 seconds</div>
+            </div>
+          </div>
+          <div class="device-note">Layer change restarts the 10-second display cycle.</div>
+        </section>
+
+        <!-- ============ ABOUT ============ -->
+        <section class="section section-about hidden" data-section="About & license">
+          <div class="eyebrow">SYSTEM&nbsp; › &nbsp;ABOUT</div>
+          <div class="about-title">About</div>
+          <div class="about-hero">
+            <img src="assets/visrodeck_instruments.png" alt="Visrodeck">
+            <div>
+              <div class="hero-name">KOHLRAUSCH KONFIG</div>
+              <div class="hero-sub">3×3 MACROPAD&nbsp; · &nbsp;VERSION 0.5.4</div>
+            </div>
+            <div class="spacer"></div>
+            <div class="hero-company">Visrodeck Technologies</div>
+          </div>
+          <div class="about-card">
+            <div class="accordion-head" data-accordion="product">
+              <span class="acc-icon">ⓘ</span>
+              <span class="acc-title">Product information</span>
+              <span class="acc-chevron" id="chevron-product">−</span>
+            </div>
+            <div class="accordion-body" id="body-product">
+              <div class="hr" style="background:#343537"></div>
+              <div class="about-row"><div class="ar-label">Name</div><div class="ar-value">Kohlrausch Konfig</div></div>
+              <div class="hr" style="background:#343537"></div>
+              <div class="about-row"><div class="ar-label">Version</div><div class="ar-value">0.5.4</div></div>
+              <div class="hr" style="background:#343537"></div>
+              <div class="about-row"><div class="ar-label">Company</div><div class="ar-value">Visrodeck Technologies</div></div>
+              <div class="hr" style="background:#343537"></div>
+              <div class="about-row"><div class="ar-label">Packaged by</div><div class="ar-value">Emtypyie.Cli &lt;Emtypyie&amp;Co&gt;</div></div>
+            </div>
+          </div>
+          <div class="about-card">
+            <div class="accordion-head" data-accordion="license">
+              <span class="acc-icon">ⓘ</span>
+              <span class="acc-title">License</span>
+              <span class="acc-chevron" id="chevron-license">−</span>
+            </div>
+            <div class="accordion-body" id="body-license">
+              <div class="hr" style="background:#343537"></div>
+              <div class="about-row"><div class="ar-label">License</div><div class="ar-value">MIT</div></div>
+              <div class="about-license-text">Kohlrausch Konfig is distributed under the MIT License.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ CONFIG STUDIO ============ -->
+        <section class="section section-config hidden" data-section="Config Studio">
+          <div class="eyebrow">WORKSPACE&nbsp; / &nbsp;CONFIG STUDIO&nbsp; &nbsp;·&nbsp; &nbsp;<span class="profile-inline">Default</span></div>
+          <div class="config-head">
+            <h2>CONFIG</h2>
+            <div class="spacer"></div>
+            <button class="action-btn" id="import-file" style="width:94px">Import file</button>
+            <button class="action-btn" id="import-folder" style="width:106px">Import folder</button>
+          </div>
+          <div class="config-body">
+            <div class="config-files">
+              <div class="config-files-head">
+                <span class="cf-title">CONFIG FILES</span><span class="spacer"></span><span class="cf-local">LOCAL</span>
+              </div>
+              <div class="config-files-path">APPDATA&nbsp; / &nbsp;KOHLRAUSCH&nbsp; / &nbsp;PROFILES</div>
+              <div class="config-files-divider"></div>
+              <div class="config-file-list" id="config-file-list">
+                <div class="macro-empty">No configuration files loaded</div>
+              </div>
+            </div>
+            <div class="config-editor">
+              <div class="config-editor-path" id="config-path">Default&nbsp; / &nbsp;layer-1.json</div>
+              <div class="json-editor" id="json-editor">
+                <pre id="config-highlight"></pre>
+                <textarea id="config-source" spellcheck="false"></textarea>
+              </div>
+              <div class="config-editor-foot">
+                <span class="cf-note" id="config-note">Layer configuration · changes are validated when saved</span>
+                <div class="spacer"></div>
+                <button class="action-btn active" id="save-layer" style="width:112px">Save layer</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="statusbar">
+      <span class="status-msg" id="status-message">Profile ready</span>
+      <div class="spacer"></div>
+      <button class="action-btn primary flash-btn" id="flash-button" disabled>FLASH</button>
+      <span class="flash-unavailable">UNAVAILABLE</span>
+    </footer>
+
+    <!-- profiles popup -->
+    <div class="profiles-popup hidden" id="profiles-popup">
+      <div class="pp-head">
+        <span class="pp-title">Profiles</span>
+        <div class="spacer"></div>
+        <button class="action-btn" id="profiles-close" style="width:64px;height:29px">Close</button>
+      </div>
+      <div class="pp-desc">Choose an active profile, or create one.</div>
+      <div class="pp-list" id="profile-list">
+        <div class="macro-empty">No profiles found</div>
+      </div>
+      <div class="pp-create">
+        <input class="text-input" id="new-profile-name" placeholder="New profile name">
+        <button class="action-btn primary" id="create-profile" style="width:88px">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="#dce5eb" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Create
+        </button>
+      </div>
+      <div class="pp-note">Deletion moves profile files to a recoverable archive.</div>
+      <div class="pp-archive-zone hidden" id="profile-archive-zone">
+        <div class="pp-archive">Archive this profile? It will stop appearing in the profile list.</div>
+        <div class="pp-actions" style="margin-top:6px">
+          <button class="action-btn" id="archive-profile" style="width:128px">Archive profile</button>
+          <button class="action-btn active" id="keep-profile" style="width:112px">Keep profile</button>
+        </div>
+      </div>
+      <div class="pp-actions" id="profile-normal-actions">
+        <button class="action-btn primary" id="switch-profile" style="width:150px" disabled>Switch to selected</button>
+        <button class="action-btn" id="delete-profile" style="width:82px" disabled>Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="scene.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
