@@ -71,7 +71,7 @@ jobs:
       - name: Cache Cargo dependencies and build outputs
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri -> src-tauri/target
+          workspaces: src-tauri -> target
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --locked
@@ -130,7 +130,7 @@ jobs:
       - name: Cache Cargo dependencies and build outputs
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri -> src-tauri/target
+          workspaces: src-tauri -> target
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --locked
