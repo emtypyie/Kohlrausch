@@ -25,6 +25,10 @@ The workflow waits for both platform builds before publishing one GitHub
 release with generated release notes and all package files attached. Bump the
 version in both source metadata files to publish a distinct release.
 
+The Windows and Linux jobs cache Cargo's dependency registry and compiled
+dependency artifacts. The first run after a dependency or toolchain change
+still needs a cold build; later runs can reuse compatible cached artifacts.
+
 ## Build requirements and runtime notes
 
 - Windows builds MSI and NSIS using the native Windows runner. The portable

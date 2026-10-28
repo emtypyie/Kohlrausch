@@ -68,6 +68,11 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache Cargo dependencies and build outputs
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> src-tauri/target
+
       - name: Install Tauri CLI
         run: cargo install tauri-cli --locked
 
@@ -121,6 +126,11 @@ jobs:
             wget
 
       - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies and build outputs
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> src-tauri/target
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --locked
