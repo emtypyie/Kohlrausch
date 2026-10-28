@@ -167,8 +167,7 @@ jobs:
           RELEASE_TAG: ${{ needs.version.outputs.tag }}
         shell: bash
         run: |
-          shopt -s globstar nullglob
-          files=(release-assets/**/*)
+          mapfile -d '' files < <(find release-assets -type f -print0)
           if (( ${#files[@]} == 0 )); then
             echo "No release packages were downloaded." >&2
             exit 1
