@@ -135,16 +135,18 @@ fn write_cli_output(text: &str, is_error: bool) {
 fn device_diagnostics() -> &'static str {
     "\
 Hardware metadata:
-  Electrical matrix rows and columns: pending verification
-  GPIO assignments and diode direction: pending verification
-  LYR input polarity: pending verification
+  Per-key matrix row/column identities: pending verification
+  Confirmed pins: columns GP0-GP2; rows GP3-GP5; active-low LYR GP10
+  Confirmed diode direction: columns-to-rows
   OLED controller, resolution, and I2C address: pending verification
-Firmware: hardware drivers are not available; flashing is disabled.
+OLED support: disabled in this firmware build
+Firmware updates through the desktop app: unavailable
 "
 }
 
 fn device_status(details: bool) -> Result<String, String> {
     let ports = crate::commands::serial_ports()?;
+    let device = crate::commands::detect_kohlrausch_device();
     let port_status = if ports.is_empty() {
         "No serial ports detected".to_owned()
     } else {
@@ -154,7 +156,16 @@ fn device_status(details: bool) -> Result<String, String> {
             ports.join(", ")
         )
     };
-    let mut status = format!("Device connection: Disconnected\nSerial ports: {port_status}\n");
+    let identification = match device {
+        Some(device) => format!(
+            "Kohlrausch firmware: identified on {} (version {})",
+            device.port, device.firmware_version
+        ),
+        None => "Kohlrausch firmware: no handshake detected".to_owned(),
+    };
+    let mut status = format!(
+        "Device connection: No persistent session\n{identification}\nSerial ports: {port_status}\n"
+    );
     if details {
         status.push_str(device_diagnostics());
     }
@@ -270,10 +281,12 @@ mod tests {
     #[test]
     fn device_diagnostics_keep_hardware_facts_cli_only() {
         let report = device_diagnostics();
-        assert!(report.contains("Electrical matrix rows and columns: pending verification"));
+        assert!(report.contains("Per-key matrix row/column identities: pending verification"));
+        assert!(report.contains("Confirmed diode direction: columns-to-rows"));
+        assert!(report.contains("OLED support: disabled in this firmware build"));
         assert!(
             report.contains("OLED controller, resolution, and I2C address: pending verification")
         );
-        assert!(report.contains("flashing is disabled"));
+        assert!(report.contains("Firmware updates through the desktop app: unavailable"));
     }
 }

@@ -250,8 +250,8 @@
         <section class="section section-device hidden" data-section="Device settings">
           <div class="device-title">Device settings</div>
           <div class="device-connection">
-            <div class="device-label">DEVICE CONNECTION</div>
-            <div class="device-status">Disconnected</div>
+            <div class="device-label">DEVICE IDENTIFICATION</div>
+            <div class="device-status" id="device-identity-status">No Kohlrausch firmware handshake</div>
           </div>
           <div class="device-label">DETECTED SERIAL PORTS</div>
           <div class="device-row">
@@ -261,6 +261,13 @@
             <button class="action-btn" id="refresh-ports" style="width:88px">Refresh</button>
           </div>
           <div class="device-status" id="port-status">No serial ports detected</div>
+          <div class="device-label" style="margin-top:18px">PROFILE SYNC</div>
+          <div class="device-row">
+            <button class="action-btn primary" id="sync-profile" disabled>Sync active profile</button>
+          </div>
+          <div class="device-status" id="sync-status">
+            Connect a Kohlrausch device to sync. Website and application actions remain host-only.
+          </div>
         </section>
 
         <!-- ============ ABOUT ============ -->

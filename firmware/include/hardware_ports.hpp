@@ -6,8 +6,8 @@
 
 namespace kohlrausch::ports {
 
-// Stable key IDs follow the fixed component-side visual layout. They do not
-// encode matrix coordinates or GPIO pins; the electrical mapping is pending.
+// Stable key IDs follow the fixed component-side visual layout. Board scanner
+// coordinates are translated to these IDs in board_hardware.cpp.
 enum class KeyId : std::uint8_t {
   Key3_1,
   Key2_1,
@@ -25,8 +25,8 @@ struct KeyEvent {
   bool pressed;
 };
 
-// Board-specific implementations are intentionally absent until the schematic
-// verifies GPIO assignments, switch polarity, OLED controller and I2C address.
+// Board implementations are isolated from the runtime state machine. Their
+// pin map comes from board metadata and remains physically unverified.
 class KeyScanner {
  public:
   virtual ~KeyScanner() = default;

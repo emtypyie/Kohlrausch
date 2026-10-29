@@ -2,9 +2,12 @@ use crate::config::{
     self, KeyAction, LayerConfig, MacroDefinition, MacroLibrary, MacroLoopMode, MacroStep,
     MacroTiming, MouseActionKind, Profile,
 };
+use crate::device_config;
 use serde::{Deserialize, Serialize};
 use std::fs;
+
 use std::sync::Mutex;
+use std::time::Duration;
 use tauri::{Manager, State};
 
 #[derive(Default)]
@@ -40,6 +43,8 @@ pub struct Bootstrap {
     startup_section: Option<String>,
     ports: Vec<String>,
     port_status: String,
+    device_port: Option<String>,
+    firmware_version: Option<String>,
     version_id: String,
     build_id: String,
 }
@@ -72,6 +77,13 @@ pub struct ImportOutcome {
 pub struct PortScan {
     ports: Vec<String>,
     status: String,
+    device_port: Option<String>,
+    firmware_version: Option<String>,
+}
+
+pub(crate) struct DeviceIdentity {
+    pub(crate) port: String,
+    pub(crate) firmware_version: String,
 }
 
 #[derive(Serialize)]
@@ -79,6 +91,17 @@ pub struct PortScan {
 pub struct MacroSaveResult {
     workspace: Workspace,
     macro_definition: MacroDefinition,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceSyncResult {
+    status: String,
+    bytes: usize,
+    crc: String,
+    macro_count: u8,
+    firmware_version: String,
+    sequence: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -251,17 +274,226 @@ pub(crate) fn serial_ports() -> Result<Vec<String>, String> {
     Ok(ports)
 }
 
-fn scan_ports_inner() -> (Vec<String>, String) {
+fn parse_hello(response: &str) -> Option<String> {
+    let mut fields = response.split_whitespace();
+    if fields.next()? != "KOHLRAUSCH/1"
+        || fields.next()? != "DEVICE"
+        || fields.next()? != config::BOARD_ID
+    {
+        return None;
+    }
+    let firmware_version = fields.next()?;
+    if fields.next().is_some() || firmware_version.is_empty() {
+        return None;
+    }
+    Some(firmware_version.to_owned())
+}
+
+fn read_line(port: &mut dyn serialport::SerialPort, capacity: usize) -> Result<String, String> {
+    let mut response = Vec::with_capacity(capacity);
+    let mut byte = [0_u8; 1];
+    loop {
+        match port.read(&mut byte) {
+            Ok(1) if byte[0] == b'\n' => break,
+            Ok(1) if byte[0] != b'\r' => {
+                if response.len() >= capacity {
+                    return Err("Device response exceeded the expected length".to_owned());
+                }
+                response.push(byte[0]);
+            }
+            Ok(_) => break,
+            Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+                return Err("Timed out waiting for the device response".to_owned())
+            }
+            Err(error) => return Err(format!("Cannot read device response: {error}")),
+        }
+    }
+    String::from_utf8(response).map_err(|_| "Device response was not valid UTF-8".to_owned())
+}
+
+fn send_line(port: &mut dyn serialport::SerialPort, line: &str) -> Result<(), String> {
+    port.write_all(line.as_bytes())
+        .and_then(|()| port.flush())
+        .map_err(|error| format!("Cannot write to the device: {error}"))
+}
+
+fn probe_firmware(port_name: &str) -> Option<String> {
+    let mut port = serialport::new(port_name, 115_200)
+        .timeout(Duration::from_millis(200))
+        .open()
+        .ok()?;
+    let _ = port.write_data_terminal_ready(false);
+    let _ = port.write_request_to_send(false);
+    send_line(port.as_mut(), "KOHLRAUSCH/1 HELLO\n").ok()?;
+    parse_hello(&read_line(port.as_mut(), 128).ok()?)
+}
+
+fn open_detected_device() -> Result<(Box<dyn serialport::SerialPort>, DeviceIdentity), String> {
+    let mut identity = detect_kohlrausch_device().ok_or_else(|| {
+        "No Kohlrausch firmware handshake was detected. Connect the macropad and refresh ports."
+            .to_owned()
+    })?;
+    let mut port = serialport::new(&identity.port, 115_200)
+        .timeout(Duration::from_secs(2))
+        .open()
+        .map_err(|error| format!("Cannot open {}: {error}", identity.port))?;
+    let _ = port.write_data_terminal_ready(false);
+    let _ = port.write_request_to_send(false);
+    send_line(port.as_mut(), "KOHLRAUSCH/1 HELLO\n")?;
+    let response = read_line(port.as_mut(), 128)?;
+    identity.firmware_version = parse_hello(&response)
+        .ok_or_else(|| "The serial port did not identify as Kohlrausch firmware".to_owned())?;
+    Ok((port, identity))
+}
+
+fn hex_encode(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789ABCDEF";
+    let mut encoded = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        encoded.push(HEX[(byte >> 4) as usize] as char);
+        encoded.push(HEX[(byte & 0x0F) as usize] as char);
+    }
+    encoded
+}
+
+fn config_response(port: &mut dyn serialport::SerialPort, step: &str) -> Result<String, String> {
+    let response = read_line(port, 256)?;
+    if let Some(code) = response.strip_prefix("KOHLRAUSCH/1 CONFIG ERROR ") {
+        return Err(format!(
+            "Device rejected configuration during {step}: {code}"
+        ));
+    }
+    Ok(response)
+}
+
+fn sync_payload(
+    port: &mut dyn serialport::SerialPort,
+    payload: &device_config::DeviceConfigPayload,
+) -> Result<Option<u32>, String> {
+    let crc = format!("{:08X}", payload.crc);
+    send_line(
+        port,
+        &format!(
+            "KOHLRAUSCH/1 CONFIG BEGIN {} {}\n",
+            payload.bytes.len(),
+            crc
+        ),
+    )?;
+    let ready = config_response(port, "begin")?;
+    let expected_ready = format!("KOHLRAUSCH/1 CONFIG READY {}", payload.bytes.len());
+    if ready != expected_ready {
+        return Err(format!("Unexpected device response: {ready}"));
+    }
+
+    for (index, chunk) in payload.bytes.chunks(64).enumerate() {
+        let offset = index * 64;
+        send_line(
+            port,
+            &format!(
+                "KOHLRAUSCH/1 CONFIG DATA {} {}\n",
+                offset,
+                hex_encode(chunk)
+            ),
+        )?;
+        let response = config_response(port, "data")?;
+        let expected = format!("KOHLRAUSCH/1 CONFIG OK {}", offset + chunk.len());
+        if response != expected {
+            return Err(format!("Unexpected device response: {response}"));
+        }
+    }
+
+    send_line(
+        port,
+        &format!(
+            "KOHLRAUSCH/1 CONFIG COMMIT {} {}\n",
+            payload.bytes.len(),
+            crc
+        ),
+    )?;
+    let saved = config_response(port, "commit")?;
+    let expected_saved = format!("KOHLRAUSCH/1 CONFIG SAVED {crc}");
+    if saved != expected_saved {
+        return Err(format!("Unexpected device response: {saved}"));
+    }
+
+    send_line(port, "KOHLRAUSCH/1 CONFIG STATUS\n")?;
+    let status = config_response(port, "status")?;
+    let fields = status.split_whitespace().collect::<Vec<_>>();
+    let expected_crc_field = format!("crc={crc}");
+    if fields.len() != 8
+        || fields[0] != "KOHLRAUSCH/1"
+        || fields[1] != "CONFIG"
+        || fields[2] != "STATUS"
+        || fields[3] != "source=flash"
+        || fields[4] != "version=1"
+        || fields[7] != expected_crc_field.as_str()
+    {
+        return Err(format!(
+            "The device did not confirm the saved configuration: {status}"
+        ));
+    }
+    let bytes = fields[6]
+        .strip_prefix("bytes=")
+        .and_then(|value| value.parse::<usize>().ok());
+    if bytes != Some(payload.bytes.len()) {
+        return Err(format!(
+            "The device reported a different configuration size: {status}"
+        ));
+    }
+    let sequence = fields[5]
+        .strip_prefix("sequence=")
+        .and_then(|value| value.parse::<u32>().ok());
+    Ok(sequence)
+}
+
+pub(crate) fn detect_kohlrausch_device() -> Option<DeviceIdentity> {
+    serialport::available_ports()
+        .ok()?
+        .into_iter()
+        .find_map(|port| match &port.port_type {
+            serialport::SerialPortType::UsbPort(info) if info.vid == 0x2E8A => {
+                probe_firmware(&port.port_name).map(|firmware_version| DeviceIdentity {
+                    port: port.port_name,
+                    firmware_version,
+                })
+            }
+            _ => None,
+        })
+}
+
+fn scan_ports_inner() -> PortScan {
     let ports = match serial_ports() {
         Ok(ports) => ports,
-        Err(error) => return (Vec::new(), error),
+        Err(error) => {
+            return PortScan {
+                ports: Vec::new(),
+                status: error,
+                device_port: None,
+                firmware_version: None,
+            };
+        }
     };
+    let identity = detect_kohlrausch_device();
     let status = if ports.is_empty() {
         "No serial ports detected".to_owned()
+    } else if let Some(device) = &identity {
+        format!(
+            "{} serial port(s) detected; Kohlrausch firmware identified on {}",
+            ports.len(),
+            device.port
+        )
     } else {
-        format!("{} serial port(s) detected", ports.len())
+        format!(
+            "{} serial port(s) detected; no Kohlrausch firmware handshake",
+            ports.len()
+        )
     };
-    (ports, status)
+    PortScan {
+        ports,
+        status,
+        device_port: identity.as_ref().map(|device| device.port.clone()),
+        firmware_version: identity.map(|device| device.firmware_version),
+    }
 }
 
 fn application_location(value: &str) -> (Option<String>, Option<String>) {
@@ -461,12 +693,14 @@ pub async fn bootstrap(
             .map_err(|_| "Configuration lock is unavailable".to_owned())?;
         load_workspace()?
     };
-    let (ports, port_status) = scan_ports_inner();
+    let scan = scan_ports_inner();
     Ok(Bootstrap {
         workspace,
         startup_section: startup.section.clone(),
-        ports,
-        port_status,
+        ports: scan.ports,
+        port_status: scan.status,
+        device_port: scan.device_port,
+        firmware_version: scan.firmware_version,
         version_id: env!("CARGO_PKG_VERSION").to_owned(),
         build_id: env!("KOHLRAUSCH_BUILD_ID").to_owned(),
     })
@@ -483,8 +717,37 @@ pub async fn get_workspace(state: State<'_, AppState>) -> Result<Workspace, Stri
 
 #[tauri::command]
 pub async fn scan_ports() -> Result<PortScan, String> {
-    let (ports, status) = scan_ports_inner();
-    Ok(PortScan { ports, status })
+    Ok(scan_ports_inner())
+}
+
+#[tauri::command]
+pub async fn sync_profile(state: State<'_, AppState>) -> Result<DeviceSyncResult, String> {
+    let _guard = state
+        .write_lock
+        .lock()
+        .map_err(|_| "Configuration lock is unavailable".to_owned())?;
+    let profile = config::load_active_profile()?;
+    let library = config::load_macro_library()?;
+    let payload = device_config::build_device_config(&profile, &library)?;
+    let (mut port, identity) = open_detected_device()?;
+    let sequence = sync_payload(port.as_mut(), &payload)?;
+    let crc = format!("{:08X}", payload.crc);
+    let status = format!(
+        "Synced profile \"{}\" to {} · {} bytes · {} macro(s) · CRC {}",
+        profile.name,
+        identity.port,
+        payload.bytes.len(),
+        payload.macro_count,
+        crc
+    );
+    Ok(DeviceSyncResult {
+        status,
+        bytes: payload.bytes.len(),
+        crc,
+        macro_count: payload.macro_count,
+        firmware_version: identity.firmware_version,
+        sequence,
+    })
 }
 
 #[tauri::command]
@@ -845,7 +1108,7 @@ pub async fn finish_startup(
     app: tauri::AppHandle,
     startup: State<'_, StartupRoute>,
 ) -> Result<(), String> {
-    let remaining = std::time::Duration::from_secs(5).saturating_sub(startup.started_at.elapsed());
+    let remaining = Duration::from_secs(5).saturating_sub(startup.started_at.elapsed());
     if !remaining.is_zero() {
         tauri::async_runtime::spawn_blocking(move || std::thread::sleep(remaining))
             .await
@@ -886,5 +1149,23 @@ mod tests {
     #[test]
     fn slug_produces_a_stable_id() {
         assert_eq!(slug("My Work Profile"), "my-work-profile");
+    }
+
+    #[test]
+    fn hello_parser_requires_the_exact_board_and_version() {
+        assert_eq!(
+            parse_hello("KOHLRAUSCH/1 DEVICE kohlrausch-rp2040-macropad 0.1.0"),
+            Some("0.1.0".to_owned())
+        );
+        assert!(parse_hello("KOHLRAUSCH/1 DEVICE other-board 0.1.0").is_none());
+        assert!(parse_hello("KOHLRAUSCH/1 DEVICE kohlrausch-rp2040-macropad").is_none());
+        assert!(
+            parse_hello("KOHLRAUSCH/1 DEVICE kohlrausch-rp2040-macropad 0.1.0 extra").is_none()
+        );
+    }
+
+    #[test]
+    fn config_chunks_encode_as_uppercase_hex() {
+        assert_eq!(hex_encode(&[0x00, 0x0F, 0xA5, 0xFF]), "000FA5FF");
     }
 }

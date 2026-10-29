@@ -218,6 +218,10 @@
         "controller",
         "resolution",
         "i2cAddress",
+        "i2cBus",
+        "sdaGpio",
+        "sclGpio",
+        "frequencyHz",
         "status"
       ],
       "properties": {
@@ -238,6 +242,26 @@
             "string",
             "null"
           ]
+        },
+        "i2cBus": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sdaGpio": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 29
+        },
+        "sclGpio": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 29
+        },
+        "frequencyHz": {
+          "type": ["integer", "null"],
+          "minimum": 10000,
+          "maximum": 1000000
         },
         "status": {
           "enum": [

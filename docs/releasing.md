@@ -15,8 +15,8 @@ keep `src-tauri/tauri.conf.json`'s `version` equal to it. The workflow reads
 Cargo's version and fails if those values differ. It does not hardcode a
 release version.
 
-To publish from a tag, push the exact matching tag, such as `v1.2.0` for
-version `1.2.0`. A tag that does not match the version in the checked-out code
+To publish from a tag, push the exact matching tag, such as `v1.2.1` for
+version `1.2.1`. A tag that does not match the version in the checked-out code
 fails before building. Alternatively, run **Build and publish releases** with
 `workflow_dispatch`; the workflow uses the current code version and creates
 the corresponding `v<version>` release tag.

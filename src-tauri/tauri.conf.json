@@ -1,6 +1,6 @@
 {
   "productName": "Kohlrausch Konfig",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "identifier": "com.emtypyie.kohlrausch",
   "build": {
     "frontendDist": "./ui",
@@ -41,7 +41,9 @@
     ],
     "security": {
       "csp": null,
-      "capabilities": ["default"]
+      "capabilities": [
+        "default"
+      ]
     }
   },
   "bundle": {

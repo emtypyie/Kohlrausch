@@ -1,6 +1,6 @@
 [package]
 name = "kohlrausch"
-version = "1.2.0"
+version = "1.2.1"
 description = "Kohlrausch Konfig macropad configuration"
 authors = ["Emtypyie"]
 license = "MIT"

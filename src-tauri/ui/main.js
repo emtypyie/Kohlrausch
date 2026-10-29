@@ -41,12 +41,20 @@
     macroLoopCount: 3,
     configFiles: [],
     selectedConfigFile: -1,
+    devicePort: null,
+    firmwareVersion: null,
+    syncBusy: false,
   };
+
+  const DEVICE_SCAN_INTERVAL_MS = 3000;
+  let deviceScanTimer = null;
+  let deviceScanInFlight = false;
 
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+  const SPLASH_MINIMUM_MS = 5000;
   const splashStartedAt = performance.now();
   const splashProgressTimer = window.setInterval(() => {
     const percent = Math.min(100, Math.floor(((performance.now() - splashStartedAt) / SPLASH_MINIMUM_MS) * 100));
@@ -1111,8 +1119,10 @@
   }
 
   /* ---------------- device and ports ---------------- */
-  function renderPorts(ports, status) {
+  function renderPorts(ports, status, devicePort, firmwareVersion) {
     const select = $("#port-select");
+    state.devicePort = devicePort || null;
+    state.firmwareVersion = firmwareVersion || null;
     select.innerHTML = "";
     if (!ports || ports.length === 0) {
       select.appendChild(new Option("No ports detected", ""));
@@ -1120,34 +1130,84 @@
       ports.forEach((port) => select.appendChild(new Option(port, port)));
     }
     select.disabled = true;
-    $("#port-status").textContent = status || (ports && ports.length ? ports.length + " serial port(s) detected" : "No serial ports detected");
+    $("#device-identity-status").textContent = devicePort
+      ? "Kohlrausch firmware identified · " + devicePort
+      : "No Kohlrausch firmware handshake";
+    $("#port-status").textContent = devicePort
+      ? "Firmware " + firmwareVersion + " · " + status
+      : status || (ports && ports.length ? ports.length + " serial port(s) detected" : "No serial ports detected");
+    const connected = Boolean(devicePort);
+    $(".conn-status").textContent = connected ? "CONNECTED" : "DISCONNECTED";
+    $(".conn-dot").classList.toggle("connected", connected);
+    $(".conn-dot").classList.toggle("disconnected", !connected);
+    $("#sync-profile").disabled = !connected || state.syncBusy;
+    if (!connected) {
+      $("#sync-status").textContent =
+        "Connect a Kohlrausch device to sync. Website and application actions remain host-only.";
+    }
   }
 
-  $("#refresh-ports").addEventListener("click", async () => {
+  async function scanDevicePorts({ announce = false, reportErrors = false } = {}) {
+    if (deviceScanInFlight || state.syncBusy) return;
+    deviceScanInFlight = true;
     try {
       const result = await invoke("scan_ports");
-      renderPorts(result.ports, result.status);
+      renderPorts(result.ports, result.status, result.devicePort, result.firmwareVersion);
+    } catch (error) {
+      if (reportErrors) setStatus("Port scan failed: " + message(error));
+      else console.warn("Background device scan failed", error);
+    } finally {
+      deviceScanInFlight = false;
+    }
+    if (announce) setStatus($("#port-status").textContent);
+  }
+
+  function startDevicePolling() {
+    if (deviceScanTimer !== null) return;
+    deviceScanTimer = window.setInterval(() => scanDevicePorts(), DEVICE_SCAN_INTERVAL_MS);
+    window.addEventListener("beforeunload", () => window.clearInterval(deviceScanTimer), { once: true });
+    void scanDevicePorts();
+  }
+
+  $("#refresh-ports").addEventListener("click", () =>
+    scanDevicePorts({ announce: true, reportErrors: true })
+  );
+
+  $("#sync-profile").addEventListener("click", async () => {
+    if (!state.devicePort || state.syncBusy) return;
+    state.syncBusy = true;
+    $("#sync-profile").disabled = true;
+    $("#sync-status").textContent = "Syncing saved active profile and referenced macros…";
+    setStatus("Syncing profile to device…");
+    try {
+      const result = await invoke("sync_profile");
+      $("#sync-status").textContent = result.status;
       setStatus(result.status);
     } catch (error) {
-      setStatus("Port scan failed: " + message(error));
+      const text = "Sync failed · " + message(error);
+      $("#sync-status").textContent = text;
+      setStatus(text);
+    } finally {
+      state.syncBusy = false;
+      $("#sync-profile").disabled = !state.devicePort;
     }
   });
 
   /* ---------------- boot ---------------- */
   async function init() {
-    updateInspector();
-    renderMacroList();
-    renderEventList();
-    renderProfiles();
-    renderConfig();
-    showSection("Keymaps");
-    loadScene();
     try {
+      updateInspector();
+      renderMacroList();
+      renderEventList();
+      renderProfiles();
+      renderConfig();
+      showSection("Keymaps");
+      loadScene();
       const boot = await invoke("bootstrap");
       $("#about-version-id").textContent = boot.versionId;
       $("#about-build-id").textContent = boot.buildId;
       applyWorkspace(boot.workspace, { reloadConfig: true });
-      renderPorts(boot.ports, boot.portStatus);
+      renderPorts(boot.ports, boot.portStatus, boot.devicePort, boot.firmwareVersion);
       if (boot.startupSection) showSection(boot.startupSection);
       if (!boot.workspace.warning) setStatus("Profile ready");
     } catch (error) {
@@ -1159,6 +1219,7 @@
       } catch (error) {
         console.error("Cannot finish application startup", error);
       }
+      startDevicePolling();
     }
   }
 

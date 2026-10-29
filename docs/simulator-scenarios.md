@@ -16,10 +16,10 @@ cargo run --manifest-path src-tauri/Cargo.toml --locked -- profiles list
 cargo run --manifest-path src-tauri/Cargo.toml --locked -- flash --dry-run
 ```
 
-`device status` lists detected serial ports and reports the device as
-disconnected until a real protocol handshake exists. `device status --details`
-also reports board and firmware facts still pending verification. A serial
-port listing is not device identification. `flash --dry-run` never writes
+`device status` lists detected serial ports and probes USB CDC devices with the
+Kohlrausch protocol handshake. A port counts as identified only when the board
+ID and firmware version reply match. `device status --details` also reports
+board facts still pending verification. `flash --dry-run` never writes
 firmware; normal flashing remains disabled.
 
 ## Automated host checks

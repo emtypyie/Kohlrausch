@@ -102,23 +102,23 @@ int main() {
 
   result = runtime.update(true, 10);
   assert(!result.layer_changed);
-  result = runtime.update(true, 29);
+  result = runtime.update(true, 309);
   assert(!result.layer_changed);
-  result = runtime.update(true, 30);
+  result = runtime.update(true, 310);
   assert(result.layer_changed);
   assert(result.active_layer == 2);
   assert(result.oled_frame_changed);
   assert(result.oled_frame.screen == OledScreen::LayerSelector);
-  result = runtime.update(true, 100);
+  result = runtime.update(true, 400);
   assert(!result.layer_changed);
   assert(result.active_layer == 2);
 
-  result = runtime.update(false, 110);
+  result = runtime.update(false, 410);
   assert(!result.layer_changed);
-  result = runtime.update(false, 130);
+  result = runtime.update(false, 730);
   assert(!result.layer_changed);
-  runtime.update(true, 140);
-  result = runtime.update(true, 160);
+  runtime.update(true, 740);
+  result = runtime.update(true, 1040);
   assert(result.layer_changed);
   assert(result.active_layer == 3);
 }

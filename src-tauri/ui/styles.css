@@ -59,6 +59,8 @@ input, textarea { user-select: text; }
 .brand-sub { color: #99918e; font-size: 12px; }
 .spacer { flex: 1 1 auto; }
 .conn-dot { color: #ff7048; font-size: 14px; }
+.conn-dot.connected { color: #6fd39b; }
+.conn-dot.disconnected { color: #ff7048; }
 .conn-status { color: #d1cac7; font-size: 13px; }
 .win-buttons { display: flex; align-items: center; margin-left: 8px; }
 .win-btn {

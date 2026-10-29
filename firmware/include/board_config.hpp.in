@@ -1,0 +1,23 @@
+#pragma once
+
+#include <array>
+#include <cstdint>
+
+namespace kohlrausch::board {
+
+inline constexpr std::array<std::uint8_t, 3> kMatrixRows = {
+    @KOHLRAUSCH_ROW_GPIO_0@, @KOHLRAUSCH_ROW_GPIO_1@,
+    @KOHLRAUSCH_ROW_GPIO_2@};
+inline constexpr std::array<std::uint8_t, 3> kMatrixColumns = {
+    @KOHLRAUSCH_COLUMN_GPIO_0@, @KOHLRAUSCH_COLUMN_GPIO_1@,
+    @KOHLRAUSCH_COLUMN_GPIO_2@};
+inline constexpr std::uint8_t kLyrSwitchGpio = @KOHLRAUSCH_LYR_GPIO@;
+#if KOHLRAUSCH_ENABLE_OLED
+inline constexpr std::uint8_t kOledSdaGpio = @KOHLRAUSCH_OLED_SDA_GPIO@;
+inline constexpr std::uint8_t kOledSclGpio = @KOHLRAUSCH_OLED_SCL_GPIO@;
+inline constexpr std::uint8_t kOledI2cBus = @KOHLRAUSCH_OLED_I2C_BUS@;
+inline constexpr std::uint32_t kOledFrequencyHz = @KOHLRAUSCH_OLED_FREQUENCY_HZ@;
+inline constexpr std::uint8_t kOledAddress = @KOHLRAUSCH_OLED_ADDRESS@;
+#endif
+
+}  // namespace kohlrausch::board

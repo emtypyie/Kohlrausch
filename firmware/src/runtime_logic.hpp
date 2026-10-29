@@ -6,7 +6,7 @@ namespace kohlrausch {
 
 inline constexpr std::uint8_t kStartupLayer = 1;
 inline constexpr std::uint8_t kLayerCount = 4;
-inline constexpr std::uint32_t kLyrDebounceMs = 20;
+inline constexpr std::uint32_t kLyrDebounceMs = 300;
 inline constexpr std::uint32_t kOledScreenDurationMs = 5000;
 
 enum class OledScreen : std::uint8_t {
@@ -29,8 +29,8 @@ class LayerManager {
   std::uint8_t active_layer_ = kStartupLayer;
 };
 
-// Accepts a normalized semantic pressed state; pin polarity and GPIO scanning
-// belong to the future board-specific input driver.
+// Accepts a normalized semantic pressed state; GPIO polarity is handled by the
+// board-specific input driver.
 class DebouncedPress {
  public:
   explicit DebouncedPress(std::uint32_t debounce_ms = kLyrDebounceMs) noexcept;
