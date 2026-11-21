@@ -279,7 +279,7 @@
   }
 
   function updateInspector() {
-    const key = keyById[state.selectedKey] || { label: "1.1", physicalReference: "3.1", physicalId: "key-3-1" };
+    const key = keyById[state.selectedKey] || { label: "3.1", physicalReference: "3.1", physicalId: "key-3-1" };
     $("#insp-title").textContent = key.label + "  /  LAYER " + state.layer;
     $("#insp-key-id").textContent = key.physicalId;
     $("#insp-physical").textContent = key.physicalReference + "  ·  " + key.physicalId;

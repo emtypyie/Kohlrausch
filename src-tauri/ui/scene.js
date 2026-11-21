@@ -10,15 +10,15 @@
   const LIGHT = normalize({ x: -0.35, y: -0.48, z: 0.82 });
 
   const KEYS = [
-    { id: "logical-1-1", label: "1.1", physicalId: "key-3-1", physicalReference: "3.1", pos: [-19.77, 7.92] },
-    { id: "logical-1-2", label: "1.2", physicalId: "key-2-1", physicalReference: "2.1", pos: [-0.72, 7.92] },
-    { id: "logical-1-3", label: "1.3", physicalId: "key-1-1", physicalReference: "1.1", pos: [18.33, 7.92] },
-    { id: "logical-2-1", label: "2.1", physicalId: "key-3-2", physicalReference: "3.2", pos: [-19.39, -11.0] },
+    { id: "logical-1-1", label: "3.1", physicalId: "key-3-1", physicalReference: "3.1", pos: [-19.77, 7.92] },
+    { id: "logical-1-2", label: "2.1", physicalId: "key-2-1", physicalReference: "2.1", pos: [-0.72, 7.92] },
+    { id: "logical-1-3", label: "1.1", physicalId: "key-1-1", physicalReference: "1.1", pos: [18.33, 7.92] },
+    { id: "logical-2-1", label: "3.2", physicalId: "key-3-2", physicalReference: "3.2", pos: [-19.39, -11.0] },
     { id: "logical-2-2", label: "2.2", physicalId: "key-2-2", physicalReference: "2.2", pos: [-0.47, -11.0] },
-    { id: "logical-2-3", label: "2.3", physicalId: "key-1-2", physicalReference: "1.2", pos: [18.84, -11.0] },
-    { id: "logical-3-1", label: "3.1", physicalId: "key-3-3", physicalReference: "3.3", pos: [-19.52, -30.18] },
-    { id: "logical-3-2", label: "3.2", physicalId: "key-2-3", physicalReference: "2.3", pos: [-0.47, -30.18] },
-    { id: "logical-3-3", label: "3.3", physicalId: "key-1-3", physicalReference: "1.3", pos: [18.97, -30.18] },
+    { id: "logical-2-3", label: "1.2", physicalId: "key-1-2", physicalReference: "1.2", pos: [18.84, -11.0] },
+    { id: "logical-3-1", label: "3.3", physicalId: "key-3-3", physicalReference: "3.3", pos: [-19.52, -30.18] },
+    { id: "logical-3-2", label: "2.3", physicalId: "key-2-3", physicalReference: "2.3", pos: [-0.47, -30.18] },
+    { id: "logical-3-3", label: "1.3", physicalId: "key-1-3", physicalReference: "1.3", pos: [18.97, -30.18] },
   ];
   const LYR_POS = [-19.05, 27.13];
   const USB_POS = [0.38, 40.94];

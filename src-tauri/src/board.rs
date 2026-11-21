@@ -47,15 +47,15 @@ struct UsbMetadata { model_position_mm: ModelPositionMm }
 // Logical screen positions map onto the fixed, component-side PCB positions.
 // Electrical matrix coordinates intentionally stay null pending schematic verification.
 pub const LOGICAL_KEYS: [LogicalKey; 9] = [
-    LogicalKey { id: "logical-1-1", label: "1.1", screen_row: 0, screen_column: 0, physical_id: "key-3-1", physical_reference: "3.1" },
-    LogicalKey { id: "logical-1-2", label: "1.2", screen_row: 0, screen_column: 1, physical_id: "key-2-1", physical_reference: "2.1" },
-    LogicalKey { id: "logical-1-3", label: "1.3", screen_row: 0, screen_column: 2, physical_id: "key-1-1", physical_reference: "1.1" },
-    LogicalKey { id: "logical-2-1", label: "2.1", screen_row: 1, screen_column: 0, physical_id: "key-3-2", physical_reference: "3.2" },
+    LogicalKey { id: "logical-1-1", label: "3.1", screen_row: 0, screen_column: 0, physical_id: "key-3-1", physical_reference: "3.1" },
+    LogicalKey { id: "logical-1-2", label: "2.1", screen_row: 0, screen_column: 1, physical_id: "key-2-1", physical_reference: "2.1" },
+    LogicalKey { id: "logical-1-3", label: "1.1", screen_row: 0, screen_column: 2, physical_id: "key-1-1", physical_reference: "1.1" },
+    LogicalKey { id: "logical-2-1", label: "3.2", screen_row: 1, screen_column: 0, physical_id: "key-3-2", physical_reference: "3.2" },
     LogicalKey { id: "logical-2-2", label: "2.2", screen_row: 1, screen_column: 1, physical_id: "key-2-2", physical_reference: "2.2" },
-    LogicalKey { id: "logical-2-3", label: "2.3", screen_row: 1, screen_column: 2, physical_id: "key-1-2", physical_reference: "1.2" },
-    LogicalKey { id: "logical-3-1", label: "3.1", screen_row: 2, screen_column: 0, physical_id: "key-3-3", physical_reference: "3.3" },
-    LogicalKey { id: "logical-3-2", label: "3.2", screen_row: 2, screen_column: 1, physical_id: "key-2-3", physical_reference: "2.3" },
-    LogicalKey { id: "logical-3-3", label: "3.3", screen_row: 2, screen_column: 2, physical_id: "key-1-3", physical_reference: "1.3" },
+    LogicalKey { id: "logical-2-3", label: "1.2", screen_row: 1, screen_column: 2, physical_id: "key-1-2", physical_reference: "1.2" },
+    LogicalKey { id: "logical-3-1", label: "3.3", screen_row: 2, screen_column: 0, physical_id: "key-3-3", physical_reference: "3.3" },
+    LogicalKey { id: "logical-3-2", label: "2.3", screen_row: 2, screen_column: 1, physical_id: "key-2-3", physical_reference: "2.3" },
+    LogicalKey { id: "logical-3-3", label: "1.3", screen_row: 2, screen_column: 2, physical_id: "key-1-3", physical_reference: "1.3" },
 ];
 
 pub fn validate_definition(json: &str) -> Result<(), String> {
@@ -119,7 +119,7 @@ mod tests {
     #[test] fn mapping_matches_logical_and_physical_screen_positions() {
         validate_definition(BOARD_JSON).unwrap();
         let labels: Vec<_> = LOGICAL_KEYS.iter().map(|key| key.label).collect();
-        assert_eq!(labels, ["1.1", "1.2", "1.3", "2.1", "2.2", "2.3", "3.1", "3.2", "3.3"]);
+        assert_eq!(labels, ["3.1", "2.1", "1.1", "3.2", "2.2", "1.2", "3.3", "2.3", "1.3"]);
         let ids: std::collections::HashSet<_> = LOGICAL_KEYS.iter().map(|key| key.physical_id).collect();
         assert_eq!(ids.len(), 9);
         for key in LOGICAL_KEYS {
