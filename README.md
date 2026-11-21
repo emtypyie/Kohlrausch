@@ -1,6 +1,6 @@
 # Kohlrausch Konfig
 
-**Current version: 1.2.1**
+**Current version: 1.2.2**
 
 <p align="center"><img src="src-tauri/ui/assets/readme-banner.png" alt="Kohlrausch Konfig startup banner" width="760"></p>
 
@@ -43,9 +43,9 @@ finally {
 & .\tools\build-portable.ps1
 ```
 
-The MSI and NSIS setup executable are written under `src-tauri/target/release/bundle`. They use Tauri's default WebView2 bootstrapper if the runtime is missing. The script copies the release executable into a no-install portable folder and creates an EXE and ZIP under `dist`; the portable build needs WebView2 already installed and keeps profile data in the normal user profile storage. The current release is **1.2.1**. Its Windows artifacts are `Kohlrausch Konfig_1.2.1_x64_en-US.msi`, `Kohlrausch Konfig_1.2.1_x64-setup.exe`, and `Kohlrausch-Konfig-1.2.1-portable.exe` / `.zip`.
+The MSI and NSIS setup executable are written under `src-tauri/target/release/bundle`. They use Tauri's default WebView2 bootstrapper if the runtime is missing. The script copies the release executable into a no-install portable folder and creates an EXE and ZIP under `dist`; the portable build needs WebView2 already installed and keeps profile data in the normal user profile storage. The current release is **1.2.2**. Its Windows artifacts are `Kohlrausch Konfig_1.2.2_x64_en-US.msi`, `Kohlrausch Konfig_1.2.2_x64-setup.exe`, and `Kohlrausch-Konfig-1.2.2-portable.exe` / `.zip`.
 
-GitHub releases are built by [`.github/workflows/release.yml`](.github/workflows/release.yml). The workflow reads the version from `src-tauri/Cargo.toml`, verifies it matches `src-tauri/tauri.conf.json`, and builds Windows MSI/NSIS installers, Windows portable EXE/ZIP, and Linux DEB/AppImage packages. Push a matching `v<version>` tag (for example, `v1.2.1`) or run the workflow manually from GitHub Actions; manual runs create the release tag from the current code version.
+GitHub releases are built by [`.github/workflows/release.yml`](.github/workflows/release.yml). The workflow reads the version from `src-tauri/Cargo.toml`, verifies it matches `src-tauri/tauri.conf.json`, and builds Windows MSI/NSIS installers, Windows portable EXE/ZIP, and Linux DEB/AppImage packages. Push a matching `v<version>` tag (for example, `v1.2.2`) or run the workflow manually from GitHub Actions; manual runs create the release tag from the current code version.
 
 See [release build details](docs/releasing.md) for the version and package rules. The About page shows the Cargo package version and a 16-character build fingerprint derived from build inputs and target architecture.
 
